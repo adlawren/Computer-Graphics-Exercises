@@ -216,6 +216,8 @@ void setup(void) {
   glClearColor(1.0, 1.0, 1.0, 0.0);
   // glClearColor(0.0, 0.0, 0.0, 0.0); // todo: rm
 
+  return;
+
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 
@@ -262,7 +264,8 @@ void setup(void) {
 
 void drawScene(void) {
   glClear(GL_COLOR_BUFFER_BIT);
-  // glColor3f(0.0, 0.0, 0.0);
+
+  glColor3f(0.0, 0.0, 0.0);
 
   // glBegin(GL_POLYGON);
   // glVertex3f(20.0, 20.0, 0.0);
@@ -270,6 +273,7 @@ void drawScene(void) {
   // glVertex3f(80.0, 80.0, 0.0);
   // glVertex3f(20.0, 80.0, 0.0);
   // glEnd();
+  // glFlush();
 
   // todo: iterate over the global data structure, draw the polygons
   for (std::vector<unsigned> polygon : modelData.getPolygons()) {
@@ -277,7 +281,42 @@ void drawScene(void) {
     static unsigned* test3 = &polygon[0];
 
     // glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, &polygon[0]);
-    glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, test3);
+    // glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, test3);
+    auto vertices = modelData.getVertices();
+    glBegin(GL_POLYGON);
+    unsigned vertexOneIndex = test3[0] * 3;
+    glVertex3f(vertices[vertexOneIndex], vertices[vertexOneIndex + 1],
+               vertices[vertexOneIndex + 2]);
+
+    std::cout << "Vertex 1: " << vertices[vertexOneIndex] << " "
+              << vertices[vertexOneIndex + 1] << " "
+              << vertices[vertexOneIndex + 2] << std::endl;
+
+    unsigned vertexTwoIndex = test3[1] * 3;
+    glVertex3f(vertices[vertexTwoIndex], vertices[vertexTwoIndex + 1],
+               vertices[vertexTwoIndex + 2]);
+
+    std::cout << "Vertex 2: " << vertices[vertexTwoIndex] << " "
+              << vertices[vertexTwoIndex + 1] << " "
+              << vertices[vertexTwoIndex + 2] << std::endl;
+
+    unsigned vertexThreeIndex = test3[2] * 3;
+    glVertex3f(vertices[vertexThreeIndex], vertices[vertexThreeIndex + 1],
+               vertices[vertexThreeIndex + 2]);
+
+    std::cout << "Vertex 3: " << vertices[vertexThreeIndex] << " "
+              << vertices[vertexThreeIndex + 1] << " "
+              << vertices[vertexThreeIndex + 2] << std::endl;
+
+    unsigned vertexFourIndex = test3[3] * 3;
+    glVertex3f(vertices[vertexFourIndex], vertices[vertexFourIndex + 1],
+               vertices[vertexFourIndex + 2]);
+
+    std::cout << "Vertex 4: " << vertices[vertexFourIndex] << " "
+              << vertices[vertexFourIndex + 1] << " "
+              << vertices[vertexFourIndex + 2] << std::endl;
+
+    glEnd();
 
     // unsigned* test3 = &polygon[0];
     for (int i = 0; i < 4; ++i) {
@@ -294,7 +333,8 @@ void resize(int w, int h) {
   glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 1.0);
+  //glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 1.0);
+  glOrtho(-5.0, 5.0, -5.0, 5.0, -1.0, 1.0);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
