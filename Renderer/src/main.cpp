@@ -213,8 +213,8 @@ ModelData loadModelSpecification(std::ifstream& fileStream) {
 }
 
 void setup(void) {
-  glClearColor(1.0, 1.0, 1.0, 0.0);
-  // glClearColor(0.0, 0.0, 0.0, 0.0); // todo: rm
+  // glClearColor(1.0, 1.0, 1.0, 0.0);
+  glClearColor(0.0, 0.0, 0.0, 0.0);  // todo: rm
 
   return;
 
@@ -265,7 +265,10 @@ void setup(void) {
 void drawScene(void) {
   glClear(GL_COLOR_BUFFER_BIT);
 
-  glColor3f(0.0, 0.0, 0.0);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+  // glColor3f(0.0, 0.0, 0.0);
+  glColor3f(1.0, 1.0, 1.0);
 
   // glBegin(GL_POLYGON);
   // glVertex3f(20.0, 20.0, 0.0);
@@ -333,7 +336,7 @@ void resize(int w, int h) {
   glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  //glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 1.0);
+  // glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 1.0);
   glOrtho(-5.0, 5.0, -5.0, 5.0, -1.0, 1.0);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
