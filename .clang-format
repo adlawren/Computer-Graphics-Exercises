@@ -1,0 +1,13 @@
+BasedOnStyle:    Google
+ColumnLimit:     80
+
+TabWidth:                2
+ContinuationIndentWidth: 4
+MaxEmptyLinesToKeep    : 2
+
+AllowShortBlocksOnASingleLine:              false
+AllowShortIfStatementsOnASingleLine:        false
+AllowShortLoopsOnASingleLine:               false
+AllowShortFunctionsOnASingleLine:           false
+
+SortIncludes: false # OpenGL requires that "GL/glew.h" be included before "GL/freeglut.h"
