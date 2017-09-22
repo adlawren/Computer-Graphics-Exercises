@@ -8,6 +8,11 @@
 #include <sstream>
 #include <vector>
 
+// todo: rm
+#include <cstdlib>
+#include <cmath>
+#define PI 3.14159265
+
 // todo: move to seperate file
 class ModelData {
  public:
@@ -23,6 +28,7 @@ class ModelData {
   std::string getName() const {
     return modelName_;
   }
+
   void setName(const std::string& newModelName) {
     modelName_ = newModelName;
   }
@@ -85,6 +91,41 @@ class ModelData {
     }
   }
 
+  void writeModelFile(const std::string& filePath) {
+    std::ofstream outputFileStream(filePath);
+    if (outputFileStream.is_open()) {
+      outputFileStream << "o " << modelName_ << std::endl;
+
+      // write vertices
+      for (auto vertex : vertices_) {
+        outputFileStream << "v ";
+        for (int i = 0; i < vertex.size(); ++i) {
+          outputFileStream << vertex[i];
+          if (i < vertex.size() - 1)
+            outputFileStream << " ";
+        }
+
+        outputFileStream << std::endl;
+      }
+
+      // write ***1-indexed*** faces
+      for (auto polygon : polygons_) {
+        outputFileStream << "f ";
+        for (int i = 0; i < polygon.size(); ++i) {
+          outputFileStream << polygon[i] + 1;
+          if (i < polygon.size() - 1)
+            outputFileStream << " ";
+        }
+
+        outputFileStream << std::endl;
+      }
+
+      outputFileStream.close();
+    } else {
+      throw std::runtime_error("Failed to open model output file");
+    }
+  }
+
  private:
   std::string modelName_;
   std::vector<std::vector<float>> vertices_;
@@ -93,6 +134,9 @@ class ModelData {
 };
 
 ModelData modelData;
+
+// Display list identifier
+static unsigned int aModel;
 
 void drawScene(void);
 void resize(int, int);
@@ -198,38 +242,18 @@ ModelData loadModelSpecification(std::ifstream& fileStream) {
 }
 
 void setup(void) {
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-}
+  aModel = glGenLists(1);
 
-void drawScene(void) {
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-  glColor3f(1.0, 1.0, 1.0);
+  glNewList(aModel, GL_COMPILE);
 
   std::vector<std::vector<float>> vertices = modelData.getVertices();
 
-  // todo: iterate over the global data structure, draw the polygons
   for (std::vector<unsigned> polygon : modelData.getPolygons()) {
-    static unsigned* test3 = &polygon[0];
+    // todo: check 'polygon' size; it could be a triangle, not a 'polygon'
     glBegin(GL_POLYGON);
 
-    // unsigned vertexOneIndex = test3[0] * 3;
-    // glVertex3f(vertices[vertexOneIndex], vertices[vertexOneIndex + 1],
-    //            vertices[vertexOneIndex + 2]);
-
-    // unsigned vertexTwoIndex = test3[1] * 3;
-    // glVertex3f(vertices[vertexTwoIndex], vertices[vertexTwoIndex + 1],
-    //            vertices[vertexTwoIndex + 2]);
-
-    // unsigned vertexThreeIndex = test3[2] * 3;
-    // glVertex3f(vertices[vertexThreeIndex], vertices[vertexThreeIndex + 1],
-    //            vertices[vertexThreeIndex + 2]);
-
-    // unsigned vertexFourIndex = test3[3] * 3;
-    // glVertex3f(vertices[vertexFourIndex], vertices[vertexFourIndex + 1],
-    //            vertices[vertexFourIndex + 2]);
+    // todo: use model colors
+    glColor3f(1.0, 1.0, 1.0);
 
     for (unsigned vertexIndex : polygon) {
       glVertex3f(vertices[vertexIndex][0], vertices[vertexIndex][1],
@@ -239,6 +263,21 @@ void drawScene(void) {
     glEnd();
   }
 
+  glEndList();
+
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+}
+
+void drawScene(void) {
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+  glPushMatrix();
+  glTranslatef(0.0, 0.0, -70.0);
+  glCallList(aModel);
+  glPopMatrix();
+
   glFlush();
 }
 
@@ -246,8 +285,7 @@ void resize(int w, int h) {
   glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  // glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 1.0);
-  glOrtho(-5.0, 5.0, -5.0, 5.0, -1.0, 1.0);
+  glOrtho(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
@@ -257,6 +295,9 @@ void keyInput(unsigned char key, int x, int y) {
     // Escape-key callback
     case 27:
       exit(0);
+      break;
+    case 'w':
+      modelData.writeModelFile("out.obj");
       break;
     default:
       break;
