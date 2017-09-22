@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include <algorithm>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -8,131 +9,10 @@
 #include <sstream>
 #include <vector>
 
-// todo: rm
-#include <cstdlib>
-#include <cmath>
-#define PI 3.14159265
+#include "ModelData.hpp"
+#include "Camera.hpp"
 
-// todo: move to seperate file
-class ModelData {
- public:
-  ModelData() {
-  }
-
-  ModelData(const std::string& modelName,
-            const std::vector<std::vector<float>>& vertices,
-            const std::vector<std::vector<unsigned>>& polygons)
-      : modelName_(modelName), vertices_(vertices), polygons_(polygons) {
-  }
-
-  std::string getName() const {
-    return modelName_;
-  }
-
-  void setName(const std::string& newModelName) {
-    modelName_ = newModelName;
-  }
-
-  std::vector<std::vector<float>> getVertices() const {
-    return vertices_;
-  }
-  void addVertex(const std::vector<float> newVertex) {
-    if (newVertex.size() != 3)
-      throw std::runtime_error("Vertices must contain 3 numbers");
-
-    vertices_.push_back(newVertex);
-
-    // todo: do better
-    // ... really, vertices should be a list of pairs;
-    // ... coupling the vertex position and colors
-    for (int i = 0; i < 3; ++i) {
-      colors_.push_back(0.0f);
-    }
-  }
-
-  void printVertices() const {
-    for (auto vertex : vertices_) {
-      std::cout << std::endl << "v ";
-      for (float vertexValue : vertex) {
-        std::cout << vertexValue << " ";
-      }
-    }
-
-    std::cout << std::endl;
-  }
-
-  std::vector<float> getColors() const {
-    return colors_;
-  }
-
-  std::vector<std::vector<unsigned>> getPolygons() {
-    return polygons_;
-  }
-
-  void addPolygon(const std::vector<unsigned>& newPolygon) {
-    for (unsigned vertexIndex : newPolygon) {
-      if (vertexIndex >= vertices_.size()) {
-        throw std::runtime_error("Invalid vertex index specified");
-      }
-    }
-
-    polygons_.push_back(newPolygon);
-  }
-
-  void printPolygons() const {
-    for (auto polygon : polygons_) {
-      std::cout << "f ";
-
-      for (auto vertexIndex : polygon) {
-        std::cout << vertexIndex << " ";
-      }
-
-      std::cout << std::endl;
-    }
-  }
-
-  void writeModelFile(const std::string& filePath) {
-    std::ofstream outputFileStream(filePath);
-    if (outputFileStream.is_open()) {
-      outputFileStream << "o " << modelName_ << std::endl;
-
-      // write vertices
-      for (auto vertex : vertices_) {
-        outputFileStream << "v ";
-        for (int i = 0; i < vertex.size(); ++i) {
-          outputFileStream << vertex[i];
-          if (i < vertex.size() - 1)
-            outputFileStream << " ";
-        }
-
-        outputFileStream << std::endl;
-      }
-
-      // write ***1-indexed*** faces
-      for (auto polygon : polygons_) {
-        outputFileStream << "f ";
-        for (int i = 0; i < polygon.size(); ++i) {
-          outputFileStream << polygon[i] + 1;
-          if (i < polygon.size() - 1)
-            outputFileStream << " ";
-        }
-
-        outputFileStream << std::endl;
-      }
-
-      outputFileStream.close();
-    } else {
-      throw std::runtime_error("Failed to open model output file");
-    }
-  }
-
- private:
-  std::string modelName_;
-  std::vector<std::vector<float>> vertices_;
-  std::vector<float> colors_;  // todo: do better
-  std::vector<std::vector<unsigned>> polygons_;
-};
-
+Camera camera;
 ModelData modelData;
 
 // Display list identifier
@@ -143,6 +23,7 @@ void resize(int, int);
 void keyInput(unsigned char, int, int);
 void setup(void);
 ModelData loadModelSpecification(std::ifstream& fileStream);
+void positionCamera(void);
 
 int main(int argc, char** argv) {
   if (argc != 2) {
@@ -242,6 +123,23 @@ ModelData loadModelSpecification(std::ifstream& fileStream) {
 }
 
 void setup(void) {
+  // Translate model to origin
+  std::vector<float> modelCenter = modelData.getCenter();
+  modelData.translate(
+      std::vector<float>{-modelCenter[0], -modelCenter[1], -modelCenter[2]});
+
+  // Scale the model
+  std::vector<float> modelDimensions = modelData.getDimensions();
+  float maxDimension = std::max(
+      std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
+
+  modelData.scale(
+      std::vector<float>{1 / maxDimension, 1 / maxDimension, 1 / maxDimension});
+  modelData.scale(std::vector<float>{1.25, 1.25, 1.25});
+
+  // Translate model to (0, 0, -10)
+  // modelData.translate(std::vector<float>{0, 0, -10}); // todo: rm?
+
   aModel = glGenLists(1);
 
   glNewList(aModel, GL_COMPILE);
@@ -269,13 +167,25 @@ void setup(void) {
 }
 
 void drawScene(void) {
+  positionCamera();
+
   glClear(GL_COLOR_BUFFER_BIT);
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   glPushMatrix();
-  glTranslatef(0.0, 0.0, -70.0);
+
+  // todo: fix this static translate; do something else
+  glTranslatef(0.0, 0.0, -10.0);
+
+  std::vector<float> scale = modelData.getScale();
+  glScalef(scale[0], scale[1], scale[2]);
+
+  std::vector<float> displacement = modelData.getDisplacement();
+  glTranslatef(displacement[0], displacement[1], displacement[2]);
+
   glCallList(aModel);
+
   glPopMatrix();
 
   glFlush();
@@ -283,9 +193,26 @@ void drawScene(void) {
 
 void resize(int w, int h) {
   glViewport(0, 0, w, h);
+  positionCamera();
+}
+
+void positionCamera(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
+
+  Camera::CAMERA_PROJECTION_MODE cameraProjectionMode =
+      camera.getCameraProjectionMode();
+  switch (cameraProjectionMode) {
+    case Camera::CAMERA_PROJECTION_MODE::ORTHOGRAPHIC:
+      glOrtho(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
+      break;
+    case Camera::CAMERA_PROJECTION_MODE::PERSPECTIVE:
+      glFrustum(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
+      break;
+    default:
+      throw std::runtime_error("Unrecognized camera projection mode");
+  }
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
@@ -293,12 +220,26 @@ void resize(int w, int h) {
 void keyInput(unsigned char key, int x, int y) {
   switch (key) {
     // Escape-key callback
-    case 27:
+    case 'q':
       exit(0);
       break;
     case 'w':
       modelData.writeModelFile("out.obj");
       break;
+    case 'v': {
+      camera.setCameraProjectionMode(
+          Camera::CAMERA_PROJECTION_MODE::ORTHOGRAPHIC);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'V': {
+      camera.setCameraProjectionMode(
+          Camera::CAMERA_PROJECTION_MODE::PERSPECTIVE);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
     default:
       break;
   }

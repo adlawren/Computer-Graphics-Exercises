@@ -7,8 +7,8 @@ LDIR =-L../lib -L/usr/lib -L/usr/lib/nvidia-375
 
 LIBS=-lm -lglut -lGLEW -lGL -lGLU -lX11
 
-#_DEPS = ...
-#DEPS = $(patsubst %, $(IDIR)/%, $(_DEPS))
+_DEPS = ModelData.hpp Camera.hpp
+DEPS = $(patsubst %, $(IDIR)/%, $(_DEPS))
 
 _OBJ = main.o
 OBJ = $(patsubst %, $(ODIR)/%, $(_OBJ))
