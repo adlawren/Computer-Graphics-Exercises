@@ -21,6 +21,7 @@ static unsigned int aModel;
 void drawScene(void);
 void resize(int, int);
 void keyInput(unsigned char, int, int);
+void specialKeyInput(int key, int x, int y);
 void setup(void);
 ModelData loadModelSpecification(std::ifstream& fileStream);
 void positionCamera(void);
@@ -48,6 +49,8 @@ int main(int argc, char** argv) {
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
+
+  glutSpecialFunc(specialKeyInput);
 
   // todo: needed?
   glewExperimental = GL_TRUE;
@@ -123,22 +126,11 @@ ModelData loadModelSpecification(std::ifstream& fileStream) {
 }
 
 void setup(void) {
-  // Translate model to origin
-  std::vector<float> modelCenter = modelData.getCenter();
-  modelData.translate(
-      std::vector<float>{-modelCenter[0], -modelCenter[1], -modelCenter[2]});
-
-  // Scale the model
-  std::vector<float> modelDimensions = modelData.getDimensions();
-  float maxDimension = std::max(
-      std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
-
-  modelData.scale(
-      std::vector<float>{1 / maxDimension, 1 / maxDimension, 1 / maxDimension});
-  modelData.scale(std::vector<float>{1.25, 1.25, 1.25});
+  // Translate model vertices to the origin and scale
+  modelData.normalizeVertices();  // todo: do better
 
   // Translate model to (0, 0, -10)
-  // modelData.translate(std::vector<float>{0, 0, -10}); // todo: rm?
+  modelData.translate(std::vector<float>{0, 0, -10});
 
   aModel = glGenLists(1);
 
@@ -175,12 +167,7 @@ void drawScene(void) {
 
   glPushMatrix();
 
-  // todo: fix this static translate; do something else
-  glTranslatef(0.0, 0.0, -10.0);
-
-  std::vector<float> scale = modelData.getScale();
-  glScalef(scale[0], scale[1], scale[2]);
-
+  // Translate model to position
   std::vector<float> displacement = modelData.getDisplacement();
   glTranslatef(displacement[0], displacement[1], displacement[2]);
 
@@ -219,10 +206,18 @@ void positionCamera(void) {
 
 void keyInput(unsigned char key, int x, int y) {
   switch (key) {
-    // Escape-key callback
     case 'q':
       exit(0);
       break;
+    case 'x': {
+      std::vector<float> modelPosition = modelData.getDisplacement();
+
+      modelData.translate(std::vector<float>{
+          -modelPosition[0], -modelPosition[1], -modelPosition[2] - 10.0f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
     case 'w':
       modelData.writeModelFile("out.obj");
       break;
@@ -240,7 +235,32 @@ void keyInput(unsigned char key, int x, int y) {
       glutPostRedisplay();  // re-draw scene
       break;
     }
+    case 'n': {
+      modelData.translate(std::vector<float>{0.0, 0.0, -0.1});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'N': {
+      modelData.translate(std::vector<float>{0.0, 0.0, 0.1});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
     default:
       break;
   }
+}
+
+void specialKeyInput(int key, int x, int y) {
+  if (key == GLUT_KEY_UP)
+    modelData.translate(std::vector<float>{0.0, 0.1, 0.0});
+  if (key == GLUT_KEY_DOWN)
+    modelData.translate(std::vector<float>{0.0, -0.1, 0.0});
+  if (key == GLUT_KEY_LEFT)
+    modelData.translate(std::vector<float>{-0.1, 0.0, 0.0});
+  if (key == GLUT_KEY_RIGHT)
+    modelData.translate(std::vector<float>{0.1, 0.0, 0.0});
+
+  glutPostRedisplay();  // re-draw scene
 }

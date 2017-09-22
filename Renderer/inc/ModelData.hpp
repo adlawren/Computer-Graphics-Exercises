@@ -9,6 +9,13 @@ class ModelData {
     scale_ = std::vector<float>{1.0, 1.0, 1.0};
   }
 
+  // todo: write alternate constructor
+  // ... take vertices as an argument and remove the addVertex functionality.
+  // ... Implement a companion class to load data from the file and initialize a
+  // ... model using the new constructor
+  //   ModelData() {
+  //   }
+
   std::string getName() const {
     return modelName_;
   }
@@ -120,6 +127,34 @@ class ModelData {
     return std::vector<float>{maxX - minX, maxY - minY, maxZ - minZ};
   }
 
+  // todo: do this another way
+  void normalizeVertices() {
+    // Translate model to the origin and scale vertices
+    std::vector<float> modelCenter = getCenter();
+
+    std::vector<float> modelDimensions = getDimensions();
+    float maxDimension = std::max(
+        std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
+
+    std::vector<float> scale = std::vector<float>{
+        1 / maxDimension, 1 / maxDimension, 1 / maxDimension};
+    scale[0] *= 1.25;
+    scale[1] *= 1.25;
+    scale[2] *= 1.25;
+
+    for (std::vector<float>& vertex : vertices_) {
+      vertex[0] -= modelCenter[0];
+      vertex[0] *= scale[0];
+
+      vertex[1] -= modelCenter[1];
+      vertex[1] *= scale[1];
+
+      vertex[2] -= modelCenter[2];
+      vertex[2] *= scale[2];
+    }
+  }
+
+  // todo: rm
   std::vector<float> getScale() const {
     return scale_;
   }
