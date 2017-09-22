@@ -8,19 +8,14 @@
 #include <sstream>
 #include <vector>
 
-// todo: rm, testing
-static float vertices2[] = {20.0f, 20.0f, 0.0f, 80.0f, 20.0f, 0.0f,
-                            80.0f, 80.0f, 0.0f, 20.0f, 80.0f, 0.0f};
-static float colors2[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static unsigned polygon2[] = {0, 1, 2, 3};
-
+// todo: move to seperate file
 class ModelData {
  public:
   ModelData() {
   }
 
-  ModelData(const std::string& modelName, const std::vector<float>& vertices,
+  ModelData(const std::string& modelName,
+            const std::vector<std::vector<float>>& vertices,
             const std::vector<std::vector<unsigned>>& polygons)
       : modelName_(modelName), vertices_(vertices), polygons_(polygons) {
   }
@@ -32,34 +27,29 @@ class ModelData {
     modelName_ = newModelName;
   }
 
-  std::vector<float> getVertices() const {
+  std::vector<std::vector<float>> getVertices() const {
     return vertices_;
   }
   void addVertex(const std::vector<float> newVertex) {
     if (newVertex.size() != 3)
       throw std::runtime_error("Vertices must contain 3 numbers");
 
-    for (float vertexValue : newVertex) {
-      vertices_.push_back(vertexValue);
-    }
+    vertices_.push_back(newVertex);
 
     // todo: do better
+    // ... really, vertices should be a list of pairs;
+    // ... coupling the vertex position and colors
     for (int i = 0; i < 3; ++i) {
       colors_.push_back(0.0f);
     }
   }
 
-  // todo: rm?
   void printVertices() const {
-    unsigned vertexValueIndex = 0;
-    for (auto vertexValue : vertices_) {
-      if (vertexValueIndex % 3 == 0) {
-        std::cout << std::endl << "v ";
+    for (auto vertex : vertices_) {
+      std::cout << std::endl << "v ";
+      for (float vertexValue : vertex) {
+        std::cout << vertexValue << " ";
       }
-
-      std::cout << vertexValue << " ";
-
-      vertexValueIndex += 1;
     }
 
     std::cout << std::endl;
@@ -74,7 +64,6 @@ class ModelData {
   }
 
   void addPolygon(const std::vector<unsigned>& newPolygon) {
-    // todo: assert that the new polygon only contains vaid index values
     for (unsigned vertexIndex : newPolygon) {
       if (vertexIndex >= vertices_.size()) {
         throw std::runtime_error("Invalid vertex index specified");
@@ -98,7 +87,7 @@ class ModelData {
 
  private:
   std::string modelName_;
-  std::vector<float> vertices_;
+  std::vector<std::vector<float>> vertices_;
   std::vector<float> colors_;  // todo: do better
   std::vector<std::vector<unsigned>> polygons_;
 };
@@ -121,10 +110,6 @@ int main(int argc, char** argv) {
   // Load the data from the file into a global data structure
   std::ifstream modelSpecificationFileStream(argv[1]);
   modelData = loadModelSpecification(modelSpecificationFileStream);
-
-  // todo: rm
-  // modelData.printVertices();
-  // modelData.printPolygons();
 
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
@@ -213,53 +198,7 @@ ModelData loadModelSpecification(std::ifstream& fileStream) {
 }
 
 void setup(void) {
-  // glClearColor(1.0, 1.0, 1.0, 0.0);
-  glClearColor(0.0, 0.0, 0.0, 0.0);  // todo: rm
-
-  return;
-
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
-
-  std::vector<float> vertices = modelData.getVertices();
-  // static float* test1 = vertices2;  //&vertices[0];
-
-  // todo: this is the issue.
-  // ... the array needs to be statically, stack allocated; size needs to be
-  // ... known beforehand.
-  // proposal: pre-allocate an array with a fixed buffer size
-  // ... later, use numerical constraints to ensure that only the subset of
-  // ... interest is used. can do a check when parsing the model to verify
-  // ... that the number of vertices does not exceed the buffer size
-  static float test_again1[12];  // [vertices.size()]; -> doesn't work
-  for (int i = 0; i < vertices.size(); ++i) {
-    test_again1[i] = vertices[i];
-  }
-
-  // static float* test1 = (float*)&vertices[0];
-  static float* test1 = test_again1;
-
-  // glVertexPointer(3, GL_FLOAT, 0, &vertices[0]);
-  // glVertexPointer(3, GL_FLOAT, 0, vertices2);
-  glVertexPointer(3, GL_FLOAT, 0, test1);
-
-  // float* test1 = &vertices[0];
-  for (int i = 0; i < 12; ++i) {
-    std::cout << test1[i] << " ";
-  }
-  std::cout << std::endl;
-
-  std::vector<float> colors = modelData.getColors();
-  static float* test2 = colors2;  //&colors[0];
-  // glColorPointer(3, GL_FLOAT, 0, &colors[0]);
-  // glColorPointer(3, GL_FLOAT, 0, colors2);
-  glColorPointer(3, GL_FLOAT, 0, test2);
-
-  // float* test2 = &colors[0];
-  for (int i = 0; i < 12; ++i) {
-    std::cout << test2[i] << " ";
-  }
-  std::cout << std::endl;
+  glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
 void drawScene(void) {
@@ -267,67 +206,38 @@ void drawScene(void) {
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  // glColor3f(0.0, 0.0, 0.0);
   glColor3f(1.0, 1.0, 1.0);
 
-  // glBegin(GL_POLYGON);
-  // glVertex3f(20.0, 20.0, 0.0);
-  // glVertex3f(80.0, 20.0, 0.0);
-  // glVertex3f(80.0, 80.0, 0.0);
-  // glVertex3f(20.0, 80.0, 0.0);
-  // glEnd();
-  // glFlush();
+  std::vector<std::vector<float>> vertices = modelData.getVertices();
 
   // todo: iterate over the global data structure, draw the polygons
   for (std::vector<unsigned> polygon : modelData.getPolygons()) {
-    // static unsigned* test3 = polygon2;  //&polygon[0];
     static unsigned* test3 = &polygon[0];
-
-    // glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, &polygon[0]);
-    // glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, test3);
-    auto vertices = modelData.getVertices();
     glBegin(GL_POLYGON);
-    unsigned vertexOneIndex = test3[0] * 3;
-    glVertex3f(vertices[vertexOneIndex], vertices[vertexOneIndex + 1],
-               vertices[vertexOneIndex + 2]);
 
-    std::cout << "Vertex 1: " << vertices[vertexOneIndex] << " "
-              << vertices[vertexOneIndex + 1] << " "
-              << vertices[vertexOneIndex + 2] << std::endl;
+    // unsigned vertexOneIndex = test3[0] * 3;
+    // glVertex3f(vertices[vertexOneIndex], vertices[vertexOneIndex + 1],
+    //            vertices[vertexOneIndex + 2]);
 
-    unsigned vertexTwoIndex = test3[1] * 3;
-    glVertex3f(vertices[vertexTwoIndex], vertices[vertexTwoIndex + 1],
-               vertices[vertexTwoIndex + 2]);
+    // unsigned vertexTwoIndex = test3[1] * 3;
+    // glVertex3f(vertices[vertexTwoIndex], vertices[vertexTwoIndex + 1],
+    //            vertices[vertexTwoIndex + 2]);
 
-    std::cout << "Vertex 2: " << vertices[vertexTwoIndex] << " "
-              << vertices[vertexTwoIndex + 1] << " "
-              << vertices[vertexTwoIndex + 2] << std::endl;
+    // unsigned vertexThreeIndex = test3[2] * 3;
+    // glVertex3f(vertices[vertexThreeIndex], vertices[vertexThreeIndex + 1],
+    //            vertices[vertexThreeIndex + 2]);
 
-    unsigned vertexThreeIndex = test3[2] * 3;
-    glVertex3f(vertices[vertexThreeIndex], vertices[vertexThreeIndex + 1],
-               vertices[vertexThreeIndex + 2]);
+    // unsigned vertexFourIndex = test3[3] * 3;
+    // glVertex3f(vertices[vertexFourIndex], vertices[vertexFourIndex + 1],
+    //            vertices[vertexFourIndex + 2]);
 
-    std::cout << "Vertex 3: " << vertices[vertexThreeIndex] << " "
-              << vertices[vertexThreeIndex + 1] << " "
-              << vertices[vertexThreeIndex + 2] << std::endl;
-
-    unsigned vertexFourIndex = test3[3] * 3;
-    glVertex3f(vertices[vertexFourIndex], vertices[vertexFourIndex + 1],
-               vertices[vertexFourIndex + 2]);
-
-    std::cout << "Vertex 4: " << vertices[vertexFourIndex] << " "
-              << vertices[vertexFourIndex + 1] << " "
-              << vertices[vertexFourIndex + 2] << std::endl;
+    for (unsigned vertexIndex : polygon) {
+      glVertex3f(vertices[vertexIndex][0], vertices[vertexIndex][1],
+                 vertices[vertexIndex][2]);
+    }
 
     glEnd();
-
-    // unsigned* test3 = &polygon[0];
-    for (int i = 0; i < 4; ++i) {
-      std::cout << test3[i] << " ";
-    }
-    std::cout << std::endl;
   }
-  // glDrawElements(GL_POLYGON, 4, GL_UNSIGNED_INT, polygon2);
 
   glFlush();
 }
