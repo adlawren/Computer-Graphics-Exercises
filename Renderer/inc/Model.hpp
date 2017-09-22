@@ -2,19 +2,12 @@
 
 #include <cfloat>
 
-class ModelData {
+class Model {
  public:
-  ModelData() {
+  Model() {
     displacement_ = std::vector<float>{0.0, 0.0, 0.0};
     scale_ = std::vector<float>{1.0, 1.0, 1.0};
   }
-
-  // todo: write alternate constructor
-  // ... take vertices as an argument and remove the addVertex functionality.
-  // ... Implement a companion class to load data from the file and initialize a
-  // ... model using the new constructor
-  //   ModelData() {
-  //   }
 
   std::string getName() const {
     return modelName_;
@@ -154,7 +147,6 @@ class ModelData {
     }
   }
 
-  // todo: rm
   std::vector<float> getScale() const {
     return scale_;
   }
@@ -176,7 +168,7 @@ class ModelData {
   }
 
   // todo: figure out how to enforce a certain number of significant digit
-  void writeModelFile(const std::string& filePath) {
+  void writeToFile(const std::string& filePath) {
     std::ofstream outputFileStream(filePath);
     if (outputFileStream.is_open()) {
       outputFileStream << "o " << modelName_ << std::endl;
@@ -221,4 +213,6 @@ class ModelData {
 
   std::vector<float> displacement_;
   std::vector<float> scale_;
+
+  friend class ModelFactory;
 };
