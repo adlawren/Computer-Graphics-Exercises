@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
   glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
-  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
+  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
 
@@ -62,6 +62,10 @@ int main(int argc, char** argv) {
 }
 
 void setup(void) {
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+
+  glEnable(GL_DEPTH_TEST);
+
   // Translate model to (0, 0, -10)
   model.translate(std::vector<float>{0, 0, -10});
 
@@ -85,26 +89,24 @@ void setup(void) {
 
     glEnd();
   }
-
+  
   glEndList();
-
-  glClearColor(0.0, 0.0, 0.0, 0.0);
 }
 
 void drawScene(void) {
   positionCamera();
 
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // float fogColor[4] = {0.5, 0.5, 0.5, 1.0};
+  float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
 
-  // glEnable(GL_FOG);
-  // glFogfv(GL_FOG_COLOR, );
-  // glFogi(GL_FOG_MODE, );
-  // glFogf(GL_FOG_START, );
-  // glFogf(GL_FOG_END, );
-  // glFogf(GL_FOG_DENSITY, );
-  // glHint(GL_FOG_HINT, GL_NICEST);
+  glEnable(GL_FOG);
+  glFogfv(GL_FOG_COLOR, fogColor);
+  glFogi(GL_FOG_MODE, GL_LINEAR);
+  glFogf(GL_FOG_START, 10.0);
+  glFogf(GL_FOG_END, 11.0);
+  glFogf(GL_FOG_DENSITY, 0.01);
+  glHint(GL_FOG_HINT, GL_NICEST);
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
