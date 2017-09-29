@@ -7,16 +7,20 @@ class ModelFactory {
   ModelFactory(const std::string& modelDataFilePath) {
     // Load the data from the file into a data structure
     std::ifstream modelDataFileStream(modelDataFilePath);
-    model = loadModel(modelDataFileStream);
+    model_ = loadModel(modelDataFileStream);
+  }
+
+  Model getModel() const {
+    return model_;
   }
 
   Model getNormalizedModel() const {
-    Model normalizedModel(model);
+    Model normalizedModel(model_);
 
     // Translate model to the origin and scale vertices
-    std::vector<float> modelCenter = model.getCenter();
+    std::vector<float> modelCenter = model_.getCenter();
 
-    std::vector<float> modelDimensions = model.getDimensions();
+    std::vector<float> modelDimensions = model_.getDimensions();
     float maxDimension = std::max(
         std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
 
@@ -43,7 +47,7 @@ class ModelFactory {
   }
 
  private:
-  Model model;
+  Model model_;
 
   Model loadModel(std::ifstream& fileStream) {
     Model modelData;

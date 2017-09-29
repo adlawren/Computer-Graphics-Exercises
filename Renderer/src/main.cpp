@@ -14,7 +14,7 @@
 #include "Camera.hpp"
 
 Camera camera;
-Model model;
+Model normalizedModel, model;
 
 // Display list identifier
 static unsigned int aModel;
@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
 
   ModelFactory modelFactory(argv[1]);
   model = modelFactory.getNormalizedModel();
+  normalizedModel = modelFactory.getNormalizedModel();
 
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
 
-  glutCreateWindow(model.getName().c_str());
+  glutCreateWindow(normalizedModel.getName().c_str());
 
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
@@ -68,15 +69,15 @@ void setup(void) {
   glEnable(GL_DEPTH_TEST);
 
   // Translate model to (0, 0, -10)
-  model.translate(std::vector<float>{0, 0, -10});
+  normalizedModel.translate(std::vector<float>{0, 0, -10});
 
   aModel = glGenLists(1);
 
   glNewList(aModel, GL_COMPILE);
 
-  std::vector<std::vector<float>> vertices = model.getVertices();
+  std::vector<std::vector<float>> vertices = normalizedModel.getVertices();
 
-  for (std::vector<unsigned> polygon : model.getPolygons()) {
+  for (std::vector<unsigned> polygon : normalizedModel.getPolygons()) {
     // todo: check 'polygon' size; it could be a triangle, not a 'polygon'
     glBegin(GL_POLYGON);
 
@@ -114,7 +115,7 @@ void drawScene(void) {
   glPushMatrix();
 
   // Translate model to position
-  std::vector<float> displacement = model.getDisplacement();
+  std::vector<float> displacement = normalizedModel.getDisplacement();
   glTranslatef(displacement[0], displacement[1], displacement[2]);
 
   glCallList(aModel);
@@ -156,9 +157,9 @@ void keyInput(unsigned char key, int x, int y) {
       exit(0);
       break;
     case 'x': {
-      std::vector<float> modelPosition = model.getDisplacement();
+      std::vector<float> modelPosition = normalizedModel.getDisplacement();
 
-      model.translate(std::vector<float>{-modelPosition[0], -modelPosition[1],
+      normalizedModel.translate(std::vector<float>{-modelPosition[0], -modelPosition[1],
                                          -modelPosition[2] - 10.0f});
 
       glutPostRedisplay();  // re-draw scene
@@ -182,13 +183,13 @@ void keyInput(unsigned char key, int x, int y) {
       break;
     }
     case 'n': {
-      model.translate(std::vector<float>{0.0, 0.0, -0.1});
+      normalizedModel.translate(std::vector<float>{0.0, 0.0, -0.1});
 
       glutPostRedisplay();  // re-draw scene
       break;
     }
     case 'N': {
-      model.translate(std::vector<float>{0.0, 0.0, 0.1});
+      normalizedModel.translate(std::vector<float>{0.0, 0.0, 0.1});
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -200,13 +201,13 @@ void keyInput(unsigned char key, int x, int y) {
 
 void specialKeyInput(int key, int x, int y) {
   if (key == GLUT_KEY_UP)
-    model.translate(std::vector<float>{0.0, 0.1, 0.0});
+    normalizedModel.translate(std::vector<float>{0.0, 0.1, 0.0});
   if (key == GLUT_KEY_DOWN)
-    model.translate(std::vector<float>{0.0, -0.1, 0.0});
+    normalizedModel.translate(std::vector<float>{0.0, -0.1, 0.0});
   if (key == GLUT_KEY_LEFT)
-    model.translate(std::vector<float>{-0.1, 0.0, 0.0});
+    normalizedModel.translate(std::vector<float>{-0.1, 0.0, 0.0});
   if (key == GLUT_KEY_RIGHT)
-    model.translate(std::vector<float>{0.1, 0.0, 0.0});
+    normalizedModel.translate(std::vector<float>{0.1, 0.0, 0.0});
 
   glutPostRedisplay();  // re-draw scene
 }
