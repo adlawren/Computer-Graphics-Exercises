@@ -40,7 +40,8 @@ int main(int argc, char** argv) {
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
   glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
-  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
 
@@ -89,7 +90,7 @@ void setup(void) {
 
     glEnd();
   }
-  
+
   glEndList();
 }
 
@@ -120,7 +121,7 @@ void drawScene(void) {
 
   glPopMatrix();
 
-  glFlush();
+  glutSwapBuffers();
 }
 
 void resize(int w, int h) {
