@@ -162,6 +162,11 @@ class Model {
   }
 
   void translate(const std::vector<float>& delta) {
+    if (delta.size() != 3)
+      throw std::runtime_error(
+          "Failed to translate model: the given delta must contain 3 "
+          "dimensions");
+
     displacement_[0] += delta[0];
     displacement_[1] += delta[1];
     displacement_[2] += delta[2];

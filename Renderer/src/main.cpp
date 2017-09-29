@@ -146,6 +146,10 @@ void positionCamera(void) {
       throw std::runtime_error("Unrecognized camera projection mode");
   }
 
+  std::vector<float> cameraDisplacement = camera.getDisplacement();
+  gluLookAt(cameraDisplacement[0], cameraDisplacement[1], cameraDisplacement[2],
+            0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
@@ -157,9 +161,12 @@ void keyInput(unsigned char key, int x, int y) {
       break;
     case 'x': {
       std::vector<float> modelPosition = normalizedModel.getDisplacement();
-
       normalizedModel.translate(std::vector<float>{
           -modelPosition[0], -modelPosition[1], -modelPosition[2] - 10.0f});
+
+      std::vector<float> cameraPosition = camera.getDisplacement();
+      camera.translate(std::vector<float>{
+          -cameraPosition[0], -cameraPosition[1], -cameraPosition[2]});
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -189,6 +196,42 @@ void keyInput(unsigned char key, int x, int y) {
     }
     case 'N': {
       normalizedModel.translate(std::vector<float>{0.0, 0.0, 0.1});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'd': {
+      camera.translate(std::vector<float>{-0.1f, 0.0f, 0.0f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'D': {
+      camera.translate(std::vector<float>{0.1f, 0.0f, 0.0f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'c': {
+      camera.translate(std::vector<float>{0.0f, -0.1f, 0.0f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'C': {
+      camera.translate(std::vector<float>{0.0f, 0.1f, 0.0f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'z': {
+      camera.translate(std::vector<float>{0.0f, 0.0f, -0.1f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'Z': {
+      camera.translate(std::vector<float>{0.0f, 0.0f, 0.1f});
 
       glutPostRedisplay();  // re-draw scene
       break;
