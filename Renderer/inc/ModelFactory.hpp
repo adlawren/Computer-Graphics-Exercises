@@ -89,6 +89,7 @@ class ModelFactory {
           modelData.addVertex(std::vector<float>{f1, f2, f3});
           break;
         }
+        // todo: add support for faces with vertex counts > 4
         case 'f': {
           if (firstPolygonLineNumber == -1)
             firstPolygonLineNumber = currentLineNumber;
@@ -96,14 +97,26 @@ class ModelFactory {
           std::stringstream ss(nextLine);
           char c;
           unsigned u1, u2, u3, u4;
-          if (!(ss >> c >> u1 >> u2 >> u3 >> u4)) {
-            throw std::runtime_error(fileFormatErrorMessage);
+
+          //// Check if the face is a polygon, if so, convert to two triangles
+          if ((ss >> c >> u1 >> u2 >> u3 >> u4)) {
+            // Subtract by 1; the data is 1-indexed
+            modelData.addPolygon(std::vector<unsigned>{u1 - 1, u2 - 1, u3 - 1});
+            modelData.addPolygon(std::vector<unsigned>{u1 - 1, u3 - 1, u4 - 1});
+            break;
           }
 
-          // Subtract by 1; the data is 1-indexed
-          modelData.addPolygon(
-              std::vector<unsigned>{u1 - 1, u2 - 1, u3 - 1, u4 - 1});
-          break;
+          // Reset string stream
+          ss.str(nextLine);
+          ss.clear();
+
+          if ((ss >> c >> u1 >> u2 >> u3)) {
+            // Subtract by 1; the data is 1-indexed
+            modelData.addPolygon(std::vector<unsigned>{u1 - 1, u2 - 1, u3 - 1});
+            break;
+          }
+
+          throw std::runtime_error(fileFormatErrorMessage);
         }
         default:
           throw std::runtime_error(fileFormatErrorMessage);

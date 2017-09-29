@@ -78,8 +78,7 @@ void setup(void) {
   std::vector<std::vector<float>> vertices = normalizedModel.getVertices();
 
   for (std::vector<unsigned> polygon : normalizedModel.getPolygons()) {
-    // todo: check 'polygon' size; it could be a triangle, not a 'polygon'
-    glBegin(GL_POLYGON);
+    glBegin(GL_TRIANGLE_STRIP);
 
     // todo: use model colors
     glColor3f(1.0, 1.0, 1.0);
@@ -159,8 +158,8 @@ void keyInput(unsigned char key, int x, int y) {
     case 'x': {
       std::vector<float> modelPosition = normalizedModel.getDisplacement();
 
-      normalizedModel.translate(std::vector<float>{-modelPosition[0], -modelPosition[1],
-                                         -modelPosition[2] - 10.0f});
+      normalizedModel.translate(std::vector<float>{
+          -modelPosition[0], -modelPosition[1], -modelPosition[2] - 10.0f});
 
       glutPostRedisplay();  // re-draw scene
       break;
