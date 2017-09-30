@@ -13,6 +13,15 @@
 #include "ModelFactory.hpp"
 #include "Camera.hpp"
 
+// todo: move this somewhere else?
+static const float PI = 3.14159265;
+float degreesToRadians(float degrees) {
+  return degrees * (PI / 180);
+}
+float radiansToDegrees(float radians) {
+  return radians * (180 / PI);
+}
+
 Camera camera;
 Model normalizedModel, model;
 
@@ -147,8 +156,20 @@ void positionCamera(void) {
   }
 
   std::vector<float> cameraDisplacement = camera.getDisplacement();
-  gluLookAt(cameraDisplacement[0], cameraDisplacement[1], cameraDisplacement[2],
-            0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
+  glTranslatef(cameraDisplacement[0], cameraDisplacement[1],
+               cameraDisplacement[2]);
+
+  //// Extract angle and axis of rotation from quaternion, rotate camera
+  Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
+
+  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
+  angle = 2 * acos(cameraOrientation.w());
+  axisX = cameraOrientation.x() / sin(angle / 2);
+  axisY = cameraOrientation.y() / sin(angle / 2);
+  axisZ = cameraOrientation.z() / sin(angle / 2);
+
+  // note: angle needs to be in degrees
+  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -159,6 +180,7 @@ void keyInput(unsigned char key, int x, int y) {
     case 'q':
       exit(0);
       break;
+    // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
     case 'x': {
       std::vector<float> modelPosition = normalizedModel.getDisplacement();
       normalizedModel.translate(std::vector<float>{
@@ -167,6 +189,9 @@ void keyInput(unsigned char key, int x, int y) {
       std::vector<float> cameraPosition = camera.getDisplacement();
       camera.translate(std::vector<float>{
           -cameraPosition[0], -cameraPosition[1], -cameraPosition[2]});
+
+      Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
+      camera.rotate(cameraOrientation.inverse());
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -232,6 +257,66 @@ void keyInput(unsigned char key, int x, int y) {
     }
     case 'Z': {
       camera.translate(std::vector<float>{0.0f, 0.0f, 0.1f});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 't': {
+      float rotationAngle = degreesToRadians(-1);
+
+      Eigen::Quaternion<float> rotationDelta(
+          cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
+      camera.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'T': {
+      float rotationAngle = degreesToRadians(1);
+
+      Eigen::Quaternion<float> rotationDelta(
+          cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
+      camera.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'a': {
+      float rotationAngle = degreesToRadians(-1);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
+                                             sin(rotationAngle / 2), 0.0f);
+      camera.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'A': {
+      float rotationAngle = degreesToRadians(1);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
+                                             sin(rotationAngle / 2), 0.0f);
+      camera.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'l': {
+      float rotationAngle = degreesToRadians(-10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
+                                             sin(rotationAngle / 2));
+      camera.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'L': {
+      float rotationAngle = degreesToRadians(10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
+                                             sin(rotationAngle / 2));
+      camera.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;

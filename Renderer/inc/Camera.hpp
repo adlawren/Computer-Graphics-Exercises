@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Geometry>
+
 class Camera {
  public:
   enum CAMERA_PROJECTION_MODE { ORTHOGRAPHIC, PERSPECTIVE };
@@ -7,6 +9,7 @@ class Camera {
   Camera() {
     cameraProjectionMode = ORTHOGRAPHIC;
     displacement_ = std::vector<float>(3, 0);
+    orientation_ = Eigen::Quaternion<float>::Identity();
   }
 
   CAMERA_PROJECTION_MODE getCameraProjectionMode() const {
@@ -32,7 +35,17 @@ class Camera {
     displacement_[2] += delta[2];
   }
 
+  Eigen::Quaternion<float> getOrientation() const {
+    return orientation_;
+  }
+
+  void rotate(const Eigen::Quaternion<float>& delta) {
+    orientation_ = delta * orientation_;
+    orientation_.normalize();
+  }
+
  private:
   CAMERA_PROJECTION_MODE cameraProjectionMode;
   std::vector<float> displacement_;
+  Eigen::Quaternion<float> orientation_;
 };

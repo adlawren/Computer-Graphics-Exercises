@@ -1,6 +1,6 @@
-IDIR=-Iinc -I/usr/include
+IDIR=-Iinc -I/usr/include -I/usr/include/eigen3/
 CC=g++
-CFLAGS=-std=c++0x $(IDIR) -Wno-write-strings
+CFLAGS=-std=c++0x $(IDIR) -Wno-write-strings # --verbose
 
 ODIR=obj
 LDIR =-L../lib -L/usr/lib -L/usr/lib/nvidia-375
