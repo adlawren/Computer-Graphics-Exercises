@@ -126,6 +126,17 @@ void drawScene(void) {
   std::vector<float> displacement = normalizedModel.getDisplacement();
   glTranslatef(displacement[0], displacement[1], displacement[2]);
 
+  //// Extract angle and axis of rotation from quaternion, rotate model
+  Eigen::Quaternion<float> modelOrientation = normalizedModel.getOrientation();
+
+  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
+  angle = 2 * acos(modelOrientation.w());
+  axisX = modelOrientation.x() / sin(angle / 2);
+  axisY = modelOrientation.y() / sin(angle / 2);
+  axisZ = modelOrientation.z() / sin(angle / 2);
+
+  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
+
   glCallList(aModel);
 
   glPopMatrix();
@@ -221,6 +232,72 @@ void keyInput(unsigned char key, int x, int y) {
     }
     case 'N': {
       normalizedModel.translate(std::vector<float>{0.0, 0.0, 0.1});
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'p': {
+      float rotationAngle = degreesToRadians(-10);
+
+      Eigen::Quaternion<float> rotationDelta(
+          cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
+
+      normalizedModel.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'P': {
+      float rotationAngle = degreesToRadians(10);
+
+      Eigen::Quaternion<float> rotationDelta(
+          cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
+
+      normalizedModel.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'y': {
+      float rotationAngle = degreesToRadians(-10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
+                                             sin(rotationAngle / 2), 0.0f);
+
+      normalizedModel.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'Y': {
+      float rotationAngle = degreesToRadians(10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
+                                             sin(rotationAngle / 2), 0.0f);
+
+      normalizedModel.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'r': {
+      float rotationAngle = degreesToRadians(-10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
+                                             sin(rotationAngle / 2));
+
+      normalizedModel.rotate(rotationDelta);
+
+      glutPostRedisplay();  // re-draw scene
+      break;
+    }
+    case 'R': {
+      float rotationAngle = degreesToRadians(10);
+
+      Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
+                                             sin(rotationAngle / 2));
+
+      normalizedModel.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;

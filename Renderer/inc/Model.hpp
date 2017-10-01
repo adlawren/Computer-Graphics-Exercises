@@ -1,12 +1,14 @@
 #pragma once
 
 #include <cfloat>
+#include <Eigen/Geometry>
 
 class Model {
  public:
   Model() {
     displacement_ = std::vector<float>{0.0, 0.0, 0.0};
     scale_ = std::vector<float>{1.0, 1.0, 1.0};
+    orientation_ = Eigen::Quaternion<float>::Identity();
   }
 
   std::string getName() const {
@@ -172,6 +174,15 @@ class Model {
     displacement_[2] += delta[2];
   }
 
+  Eigen::Quaternion<float> getOrientation() const {
+    return orientation_;
+  }
+
+  void rotate(const Eigen::Quaternion<float>& delta) {
+    orientation_ = delta * orientation_;
+    orientation_.normalize();
+  }
+
   // todo: figure out how to enforce a certain number of significant digit
   void writeToFile(const std::string& filePath) {
     std::ofstream outputFileStream(filePath);
@@ -217,7 +228,9 @@ class Model {
   std::vector<std::vector<unsigned>> polygons_;
 
   std::vector<float> displacement_;
-  std::vector<float> scale_;
+  std::vector<float> scale_;  // todo: rm
+
+  Eigen::Quaternion<float> orientation_;
 
   friend class ModelFactory;
 };
