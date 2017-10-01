@@ -193,16 +193,20 @@ void keyInput(unsigned char key, int x, int y) {
       break;
     // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
     case 'x': {
+      Eigen::Quaternion<float> modelOrientation =
+          normalizedModel.getOrientation();
+      normalizedModel.rotate(modelOrientation.inverse());
+
       std::vector<float> modelPosition = normalizedModel.getDisplacement();
       normalizedModel.translate(std::vector<float>{
           -modelPosition[0], -modelPosition[1], -modelPosition[2] - 10.0f});
 
+      Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
+      camera.rotate(cameraOrientation.inverse());
+
       std::vector<float> cameraPosition = camera.getDisplacement();
       camera.translate(std::vector<float>{
           -cameraPosition[0], -cameraPosition[1], -cameraPosition[2]});
-
-      Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
-      camera.rotate(cameraOrientation.inverse());
 
       glutPostRedisplay();  // re-draw scene
       break;
