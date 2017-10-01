@@ -169,9 +169,14 @@ class Model {
           "Failed to translate model: the given delta must contain 3 "
           "dimensions");
 
-    displacement_[0] += delta[0];
-    displacement_[1] += delta[1];
-    displacement_[2] += delta[2];
+    Eigen::Matrix<float, 3, 1> relativeDelta;
+    relativeDelta << delta[0], delta[1], delta[2];
+    Eigen::Matrix<float, 3, 3> mat = orientation_.toRotationMatrix();
+    relativeDelta = mat * relativeDelta;
+
+    displacement_[0] += relativeDelta[0];
+    displacement_[1] += relativeDelta[1];
+    displacement_[2] += relativeDelta[2];
   }
 
   Eigen::Quaternion<float> getOrientation() const {
