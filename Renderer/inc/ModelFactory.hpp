@@ -14,38 +14,6 @@ class ModelFactory {
     return model_;
   }
 
-  Model getNormalizedModel() const {
-    Model normalizedModel(model_);
-
-    // Translate model to the origin and scale vertices
-    std::vector<float> modelCenter = model_.getCenter();
-
-    std::vector<float> modelDimensions = model_.getDimensions();
-    float maxDimension = std::max(
-        std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
-
-    std::vector<float> scale = std::vector<float>{
-        1 / maxDimension, 1 / maxDimension, 1 / maxDimension};
-    scale[0] *= 1.25;
-    scale[1] *= 1.25;
-    scale[2] *= 1.25;
-
-    // The ModelFactory class is a 'friend' class of Model
-    // ... so as to access the private variable vertices
-    for (std::vector<float>& vertex : normalizedModel.vertices_) {
-      vertex[0] -= modelCenter[0];
-      vertex[0] *= scale[0];
-
-      vertex[1] -= modelCenter[1];
-      vertex[1] *= scale[1];
-
-      vertex[2] -= modelCenter[2];
-      vertex[2] *= scale[2];
-    }
-
-    return normalizedModel;
-  }
-
  private:
   Model model_;
 

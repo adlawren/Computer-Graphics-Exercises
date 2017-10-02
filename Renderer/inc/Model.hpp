@@ -19,39 +19,31 @@ class Model {
     modelName_ = newModelName;
   }
 
-  std::vector<std::vector<float>> getVertices() const {
+  std::vector<float>& getVertices() {
     return vertices_;
   }
+
   void addVertex(const std::vector<float> newVertex) {
     if (newVertex.size() != 3)
       throw std::runtime_error("Vertices must contain 3 numbers");
 
-    vertices_.push_back(newVertex);
+    for (float vertexValue : newVertex) {
+      vertices_.push_back(vertexValue);
+    }
 
     // todo: do better
-    // ... really, vertices should be a list of pairs;
+    // ... really, vertices should be a pair of lists;
     // ... coupling the vertex position and colors
     for (int i = 0; i < 3; ++i) {
-      colors_.push_back(0.0f);
+      colors_.push_back(1.0f);
     }
   }
 
-  void printVertices() const {
-    for (auto vertex : vertices_) {
-      std::cout << std::endl << "v ";
-      for (float vertexValue : vertex) {
-        std::cout << vertexValue << " ";
-      }
-    }
-
-    std::cout << std::endl;
-  }
-
-  std::vector<float> getColors() const {
+  std::vector<float>& getColors() {
     return colors_;
   }
 
-  std::vector<std::vector<unsigned>> getPolygons() {
+  std::vector<std::vector<unsigned>>& getPolygons() {
     return polygons_;
   }
 
@@ -65,24 +57,10 @@ class Model {
     polygons_.push_back(newPolygon);
   }
 
-  void printPolygons() const {
-    for (auto polygon : polygons_) {
-      std::cout << "f ";
-
-      for (auto vertexIndex : polygon) {
-        std::cout << vertexIndex << " ";
-      }
-
-      std::cout << std::endl;
-    }
-  }
-
   std::vector<float> getCenter() const {
     std::vector<float> center(3);
-    for (auto vertex : vertices_) {
-      center[0] += vertex[0];
-      center[1] += vertex[1];
-      center[2] += vertex[2];
+    for (unsigned i = 0; i < vertices_.size(); ++i) {
+      center[i % 3] += vertices_[i];
     }
 
     center[0] /= vertices_.size();
@@ -95,8 +73,8 @@ class Model {
   std::vector<float> getDimensions() const {
     float minX = FLT_MAX, maxX = 0.0, minY = FLT_MAX, maxY = 0.0,
           minZ = FLT_MAX, maxZ = 0.0;
-    for (auto vertex : vertices_) {
-      float x = vertex[0], y = vertex[1], z = vertex[2];
+    for (unsigned i = 0; i < vertices_.size(); i += 3) {
+      float x = vertices_[i], y = vertices_[i + 1], z = vertices_[i + 2];
       if (x < minX) {
         minX = x;
       }
@@ -120,33 +98,6 @@ class Model {
     }
 
     return std::vector<float>{maxX - minX, maxY - minY, maxZ - minZ};
-  }
-
-  // todo: do this another way
-  void normalizeVertices() {
-    // Translate model to the origin and scale vertices
-    std::vector<float> modelCenter = getCenter();
-
-    std::vector<float> modelDimensions = getDimensions();
-    float maxDimension = std::max(
-        std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
-
-    std::vector<float> scale = std::vector<float>{
-        1 / maxDimension, 1 / maxDimension, 1 / maxDimension};
-    scale[0] *= 1.25;
-    scale[1] *= 1.25;
-    scale[2] *= 1.25;
-
-    for (std::vector<float>& vertex : vertices_) {
-      vertex[0] -= modelCenter[0];
-      vertex[0] *= scale[0];
-
-      vertex[1] -= modelCenter[1];
-      vertex[1] *= scale[1];
-
-      vertex[2] -= modelCenter[2];
-      vertex[2] *= scale[2];
-    }
   }
 
   std::vector<float> getScale() const {
@@ -188,26 +139,25 @@ class Model {
     orientation_.normalize();
   }
 
-  // todo: figure out how to enforce a certain number of significant digit
+  // todo: figure out how to enforce a certain number of significant digits
   void writeToFile(const std::string& filePath) {
     std::ofstream outputFileStream(filePath);
     if (outputFileStream.is_open()) {
-      outputFileStream << "o " << modelName_ << std::endl;
+      outputFileStream << "o " << modelName_;
 
-      // write vertices
-      for (auto vertex : vertices_) {
-        outputFileStream << "v ";
-        for (int i = 0; i < vertex.size(); ++i) {
-          outputFileStream << vertex[i];
-          if (i < vertex.size() - 1)
-            outputFileStream << " ";
+      // Write vertices
+      for (unsigned i = 0; i < vertices_.size(); ++i) {
+        if (i == (vertices_.size() - 1)) {
+          outputFileStream << vertices_[i] << std::endl;
+        } else if (i % 3 == 0) {
+          outputFileStream << std::endl << "v " << vertices_[i] << " ";
+        } else {
+          outputFileStream << vertices_[i] << " ";
         }
-
-        outputFileStream << std::endl;
       }
 
-      // write ***1-indexed*** faces
-      for (auto polygon : polygons_) {
+      // Write ***1-indexed*** faces
+      for (std::vector<unsigned> polygon : polygons_) {
         outputFileStream << "f ";
         for (int i = 0; i < polygon.size(); ++i) {
           outputFileStream << polygon[i] + 1;
@@ -227,13 +177,13 @@ class Model {
  private:
   std::string modelName_;
 
-  std::vector<std::vector<float>> vertices_;
-  std::vector<float> colors_;  // todo: do better
+  std::vector<float> vertices_;
+  std::vector<float> colors_;
 
   std::vector<std::vector<unsigned>> polygons_;
 
   std::vector<float> displacement_;
-  std::vector<float> scale_;  // todo: rm
+  std::vector<float> scale_;
 
   Eigen::Quaternion<float> orientation_;
 

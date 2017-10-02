@@ -23,7 +23,7 @@ float radiansToDegrees(float radians) {
 }
 
 Camera camera;
-Model normalizedModel, model;
+Model model;
 
 // Display list identifier
 static unsigned int aModel;
@@ -44,8 +44,7 @@ int main(int argc, char** argv) {
   }
 
   ModelFactory modelFactory(argv[1]);
-  model = modelFactory.getNormalizedModel();
-  normalizedModel = modelFactory.getNormalizedModel();
+  model = modelFactory.getModel();
 
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
@@ -55,7 +54,7 @@ int main(int argc, char** argv) {
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
 
-  glutCreateWindow(normalizedModel.getName().c_str());
+  glutCreateWindow(model.getName().c_str());
 
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
@@ -75,29 +74,41 @@ int main(int argc, char** argv) {
 void setup(void) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
 
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+
+  std::vector<float>& vertices = model.getVertices();
+  std::vector<float>& colors = model.getColors();
+
+  glVertexPointer(3, GL_FLOAT, 0, (float*)&vertices[0]);
+  glColorPointer(3, GL_FLOAT, 0, (float*)&colors[0]);
+
   glEnable(GL_DEPTH_TEST);
 
-  // Translate model to (0, 0, -10)
-  normalizedModel.translate(std::vector<float>{0, 0, -10});
+  // Move the model into the viewing frustum
+  model.translate(std::vector<float>{0, 0, -10});
+
+  //// Scale the model to fit within screen
+  std::vector<float> modelDimensions = model.getDimensions();
+  float maxDimension = std::max(
+      std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
+
+  std::vector<float> scale =
+      std::vector<float>{1 / maxDimension, 1 / maxDimension, 1 / maxDimension};
+  scale[0] *= 1.25;
+  scale[1] *= 1.25;
+  scale[2] *= 1.25;
+
+  model.scale(scale);
 
   aModel = glGenLists(1);
 
   glNewList(aModel, GL_COMPILE);
 
-  std::vector<std::vector<float>> vertices = normalizedModel.getVertices();
-
-  for (std::vector<unsigned> polygon : normalizedModel.getPolygons()) {
-    glBegin(GL_TRIANGLE_STRIP);
-
-    // todo: use model colors
-    glColor3f(1.0, 1.0, 1.0);
-
-    for (unsigned vertexIndex : polygon) {
-      glVertex3f(vertices[vertexIndex][0], vertices[vertexIndex][1],
-                 vertices[vertexIndex][2]);
-    }
-
-    glEnd();
+  std::vector<std::vector<unsigned>>& polygons = model.getPolygons();
+  for (std::vector<unsigned>& polygon : polygons) {
+    glDrawElements(GL_TRIANGLE_STRIP, 3, GL_UNSIGNED_INT,
+                   (unsigned*)&polygon[0]);
   }
 
   glEndList();
@@ -123,11 +134,11 @@ void drawScene(void) {
   glPushMatrix();
 
   // Translate model to position
-  std::vector<float> displacement = normalizedModel.getDisplacement();
+  std::vector<float> displacement = model.getDisplacement();
   glTranslatef(displacement[0], displacement[1], displacement[2]);
 
   //// Extract angle and axis of rotation from quaternion, rotate model
-  Eigen::Quaternion<float> modelOrientation = normalizedModel.getOrientation();
+  Eigen::Quaternion<float> modelOrientation = model.getOrientation();
 
   float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
   angle = 2 * acos(modelOrientation.w());
@@ -136,6 +147,14 @@ void drawScene(void) {
   axisZ = modelOrientation.z() / sin(angle / 2);
 
   glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
+
+  // Scale model
+  std::vector<float> modelScale = model.getScale();
+  glScalef(modelScale[0], modelScale[1], modelScale[2]);
+
+  // Translate model to origin
+  auto modelCenter = model.getCenter();
+  glTranslatef(-modelCenter[0], -modelCenter[1], -modelCenter[2]);
 
   glCallList(aModel);
 
@@ -193,13 +212,12 @@ void keyInput(unsigned char key, int x, int y) {
       break;
     // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
     case 'x': {
-      Eigen::Quaternion<float> modelOrientation =
-          normalizedModel.getOrientation();
-      normalizedModel.rotate(modelOrientation.inverse());
+      Eigen::Quaternion<float> modelOrientation = model.getOrientation();
+      model.rotate(modelOrientation.inverse());
 
-      std::vector<float> modelPosition = normalizedModel.getDisplacement();
-      normalizedModel.translate(std::vector<float>{
-          -modelPosition[0], -modelPosition[1], -modelPosition[2] - 10.0f});
+      std::vector<float> modelPosition = model.getDisplacement();
+      model.translate(std::vector<float>{-modelPosition[0], -modelPosition[1],
+                                         -modelPosition[2] - 10.0f});
 
       Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
       camera.rotate(cameraOrientation.inverse());
@@ -229,13 +247,13 @@ void keyInput(unsigned char key, int x, int y) {
       break;
     }
     case 'n': {
-      normalizedModel.translate(std::vector<float>{0.0, 0.0, -0.1});
+      model.translate(std::vector<float>{0.0, 0.0, -0.1});
 
       glutPostRedisplay();  // re-draw scene
       break;
     }
     case 'N': {
-      normalizedModel.translate(std::vector<float>{0.0, 0.0, 0.1});
+      model.translate(std::vector<float>{0.0, 0.0, 0.1});
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -246,7 +264,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(
           cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -257,7 +275,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(
           cos(rotationAngle / 2), sin(rotationAngle / 2), 0.0f, 0.0f);
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -268,7 +286,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
                                              sin(rotationAngle / 2), 0.0f);
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -279,7 +297,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
                                              sin(rotationAngle / 2), 0.0f);
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -290,7 +308,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
                                              sin(rotationAngle / 2));
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -301,7 +319,7 @@ void keyInput(unsigned char key, int x, int y) {
       Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
                                              sin(rotationAngle / 2));
 
-      normalizedModel.rotate(rotationDelta);
+      model.rotate(rotationDelta);
 
       glutPostRedisplay();  // re-draw scene
       break;
@@ -409,13 +427,13 @@ void keyInput(unsigned char key, int x, int y) {
 
 void specialKeyInput(int key, int x, int y) {
   if (key == GLUT_KEY_UP)
-    normalizedModel.translate(std::vector<float>{0.0, 0.1, 0.0});
+    model.translate(std::vector<float>{0.0, 0.1, 0.0});
   if (key == GLUT_KEY_DOWN)
-    normalizedModel.translate(std::vector<float>{0.0, -0.1, 0.0});
+    model.translate(std::vector<float>{0.0, -0.1, 0.0});
   if (key == GLUT_KEY_LEFT)
-    normalizedModel.translate(std::vector<float>{-0.1, 0.0, 0.0});
+    model.translate(std::vector<float>{-0.1, 0.0, 0.0});
   if (key == GLUT_KEY_RIGHT)
-    normalizedModel.translate(std::vector<float>{0.1, 0.0, 0.0});
+    model.translate(std::vector<float>{0.1, 0.0, 0.0});
 
   glutPostRedisplay();  // re-draw scene
 }
