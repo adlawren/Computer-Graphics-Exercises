@@ -63,9 +63,10 @@ class Model {
       center[i % 3] += vertices_[i];
     }
 
-    center[0] /= vertices_.size();
-    center[1] /= vertices_.size();
-    center[2] /= vertices_.size();
+    float tmp = float(vertices_.size()) / 3.0f;
+    center[0] /= tmp;
+    center[1] /= tmp;
+    center[2] /= tmp;
 
     return center;
   }

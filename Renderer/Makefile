@@ -32,4 +32,4 @@ all: modelViewer modelViewerVBO
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ modelViewer
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ modelViewer modelViewerVBO

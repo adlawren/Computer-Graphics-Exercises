@@ -37,21 +37,16 @@ class ModelFactory {
       char c = nextLine[0];
       switch (c) {
         case 'o': {
-          if (currentLineNumber != 1)
-            throw std::runtime_error(fileFormatErrorMessage);
-
           modelData.setName(&nextLine[2]);
           break;
         }
         case 'v': {
-          if (currentLineNumber > firstPolygonLineNumber)
-            throw std::runtime_error(fileFormatErrorMessage);
-
           std::stringstream ss(nextLine);
           char c;
           float f1, f2, f3;
           if (!(ss >> c >> f1 >> f2 >> f3)) {
-            throw std::runtime_error(fileFormatErrorMessage);
+            // Could be 'vt' entry; skip
+            break;
           }
 
           modelData.addVertex(std::vector<float>{f1, f2, f3});
@@ -59,9 +54,6 @@ class ModelFactory {
         }
         // todo: add support for faces with vertex counts > 4
         case 'f': {
-          if (firstPolygonLineNumber == -1)
-            firstPolygonLineNumber = currentLineNumber;
-
           std::stringstream ss(nextLine);
           char c;
           unsigned u1, u2, u3, u4;
@@ -87,7 +79,9 @@ class ModelFactory {
           throw std::runtime_error(fileFormatErrorMessage);
         }
         default:
-          throw std::runtime_error(fileFormatErrorMessage);
+          // todo?
+          // throw std::runtime_error(fileFormatErrorMessage);
+          break;
       }
     }
 
