@@ -13,13 +13,21 @@ DEPS = $(patsubst %, $(IDIR)/%, $(_DEPS))
 _MODEL_VIEWER_OBJ = modelViewer.o
 MODEL_VIEWER_OBJ = $(patsubst %, $(ODIR)/%, $(_MODEL_VIEWER_OBJ))
 
+_MODEL_VIEWER_VBO_OBJ = modelViewerVBO.o
+MODEL_VIEWER_VBO_OBJ = $(patsubst %, $(ODIR)/%, $(_MODEL_VIEWER_VBO_OBJ))
+
 $(ODIR)/%.o: src/%.cpp #$(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+default: all
 
 modelViewer: $(MODEL_VIEWER_OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-all: modelViewer
+modelViewerVBO: $(MODEL_VIEWER_VBO_OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+all: modelViewer modelViewerVBO
 
 .PHONY: clean
 
