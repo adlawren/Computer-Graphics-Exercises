@@ -16,8 +16,10 @@ OBJ = $(patsubst %, $(ODIR)/%, $(_OBJ))
 $(ODIR)/%.o: src/%.cpp #$(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-exec: $(OBJ)
+modelViewer: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+all: modelViewer
 
 .PHONY: clean
 
