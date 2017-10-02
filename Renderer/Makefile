@@ -10,13 +10,13 @@ LIBS=-lm -lglut -lGLEW -lGL -lGLU -lX11
 _DEPS = Model.hpp ModelFactory.hpp Camera.hpp
 DEPS = $(patsubst %, $(IDIR)/%, $(_DEPS))
 
-_OBJ = main.o
-OBJ = $(patsubst %, $(ODIR)/%, $(_OBJ))
+_MODEL_VIEWER_OBJ = modelViewer.o
+MODEL_VIEWER_OBJ = $(patsubst %, $(ODIR)/%, $(_MODEL_VIEWER_OBJ))
 
 $(ODIR)/%.o: src/%.cpp #$(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-modelViewer: $(OBJ)
+modelViewer: $(MODEL_VIEWER_OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 all: modelViewer
@@ -24,4 +24,4 @@ all: modelViewer
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ exec
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ modelViewer
