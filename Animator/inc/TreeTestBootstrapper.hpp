@@ -1,7 +1,9 @@
+#pragma once
+
 #include <cassert>
 #include <set>
 
-#include "Tree.hpp"
+#include "SkeletonTree.hpp"
 
 #include <iostream> // todo: rm
 
@@ -19,36 +21,36 @@ public:
   }
 
 private:
-  static Tree::Node createRootTreeNode() {
-    Tree::Node::Channel translationChannel;
-    Tree::Node::Channel angleChannel;
-    Tree::Node::Offset offset;
+  static SkeletonTree::Node createRootTreeNode() {
+    SkeletonTree::Node::Channel translationChannel;
+    SkeletonTree::Node::Channel angleChannel;
+    SkeletonTree::Node::Offset offset;
 
-    return Tree::Node(Tree::Node(translationChannel, angleChannel, offset));
+    return SkeletonTree::Node(translationChannel, angleChannel, offset);
   }
 
-  static Tree::Node createTreeNode() {
-    Tree::Node::Channel angleChannel;
-    Tree::Node::Offset offset;
+  static SkeletonTree::Node createTreeNode() {
+    SkeletonTree::Node::Channel angleChannel;
+    SkeletonTree::Node::Offset offset;
 
-    return Tree::Node(Tree::Node(angleChannel, offset));
+    return SkeletonTree::Node(angleChannel, offset);
   }
 
-  static Tree createTree(std::set<Tree::Node *> &treeNodes) {
+  static SkeletonTree createTree(std::set<SkeletonTree::Node *> &treeNodes) {
     treeNodes.clear();
 
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
 
-    Tree::Node *rootNode = tree.getRootNode();
+    SkeletonTree::Node *rootNode = tree.getRootNode();
 
     treeNodes.emplace(rootNode);
 
-    Tree::Node newTreeNode = createTreeNode();
+    SkeletonTree::Node newTreeNode = createTreeNode();
 
     const unsigned rootChildCount = 5;
-    Tree::Node *childNode;
+    SkeletonTree::Node *childNode;
     for (unsigned i = 0; i < rootChildCount; ++i) {
       childNode = tree.addNode(newTreeNode, rootNode);
       treeNodes.emplace(childNode);
@@ -63,7 +65,7 @@ private:
     }
 
     const unsigned grandChildCount = 9;
-    Tree::Node *grandChildNode;
+    SkeletonTree::Node *grandChildNode;
     for (unsigned i = 0; i < grandChildCount; ++i) {
       grandChildNode = tree.addNode(newTreeNode, childNode);
       treeNodes.emplace(grandChildNode);
@@ -78,14 +80,14 @@ private:
     }
 
     const unsigned greatGrandChildCount = 17;
-    Tree::Node *greatGrandChildNode;
+    SkeletonTree::Node *greatGrandChildNode;
     for (unsigned i = 0; i < greatGrandChildCount; ++i) {
       greatGrandChildNode = tree.addNode(newTreeNode, grandChildNode);
       treeNodes.emplace(greatGrandChildNode);
     }
 
     const unsigned greatGreatGrandChildCount = 25;
-    Tree::Node *greatGreatGrandChildNode;
+    SkeletonTree::Node *greatGreatGrandChildNode;
     for (unsigned i = 0; i < greatGreatGrandChildCount; ++i) {
       greatGreatGrandChildNode = tree.addNode(newTreeNode, grandChildNode);
       treeNodes.emplace(greatGreatGrandChildNode);
@@ -101,7 +103,7 @@ private:
     }
 
     const unsigned greatGreatGreatGrandChildCount = 31;
-    Tree::Node *greatGreatGreatGrandChildNode;
+    SkeletonTree::Node *greatGreatGreatGrandChildNode;
     for (unsigned i = 0; i < greatGreatGreatGrandChildCount; ++i) {
       greatGreatGreatGrandChildNode =
           tree.addNode(newTreeNode, greatGreatGrandChildNode);
@@ -112,116 +114,127 @@ private:
   }
 
   static void shouldConstructTreeRootNode() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
   }
 
   static void shouldConstructTree() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
   }
 
-  static void shouldConstructTreeNode() { Tree::Node node = createTreeNode(); }
+  static void shouldConstructTreeNode() {
+    SkeletonTree::Node node = createTreeNode();
+  }
 
   static void shouldAddChildNodeToRoot() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
 
-    Tree::Node *rootNode = tree.getRootNode();
+    SkeletonTree::Node *rootNode = tree.getRootNode();
 
-    Tree::Node newTreeNode = createTreeNode();
+    SkeletonTree::Node newTreeNode = createTreeNode();
     tree.addNode(newTreeNode, rootNode);
 
-    std::vector<Tree::Node *> rootNodechildren = rootNode->getChildNodes();
+    std::vector<SkeletonTree::Node *> rootNodechildren =
+        rootNode->getChildNodes();
     assert(rootNodechildren.size() == 1);
   }
 
   static void shouldAddChildrenNodesToRoot() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
 
-    Tree::Node *rootNode = tree.getRootNode();
+    SkeletonTree::Node *rootNode = tree.getRootNode();
 
-    Tree::Node newTreeNode = createTreeNode();
+    SkeletonTree::Node newTreeNode = createTreeNode();
     tree.addNode(newTreeNode, rootNode);
 
     {
-      std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+      std::vector<SkeletonTree::Node *> rootNodeChildren =
+          rootNode->getChildNodes();
       assert(rootNodeChildren.size() == 1);
     }
 
     tree.addNode(newTreeNode, rootNode);
 
     {
-      std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+      std::vector<SkeletonTree::Node *> rootNodeChildren =
+          rootNode->getChildNodes();
       assert(rootNodeChildren.size() == 2);
     }
   }
 
   static void shouldAddGrandchildNodeToRoot() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
 
-    Tree::Node *rootNode = tree.getRootNode();
+    SkeletonTree::Node *rootNode = tree.getRootNode();
 
-    Tree::Node newTreeNode = createTreeNode();
+    SkeletonTree::Node newTreeNode = createTreeNode();
 
-    Tree::Node *newChildNode = tree.addNode(newTreeNode, rootNode);
+    SkeletonTree::Node *newChildNode = tree.addNode(newTreeNode, rootNode);
 
-    std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+    std::vector<SkeletonTree::Node *> rootNodeChildren =
+        rootNode->getChildNodes();
     assert(rootNodeChildren.size() == 1);
 
     tree.addNode(newTreeNode, newChildNode);
 
-    std::vector<Tree::Node *> childNodeChildren = newChildNode->getChildNodes();
+    std::vector<SkeletonTree::Node *> childNodeChildren =
+        newChildNode->getChildNodes();
     assert(childNodeChildren.size() == 1);
   }
 
   static void shouldAddGreatgrandchildNodesToRoot() {
-    Tree::Node rootTreeNode = createRootTreeNode();
+    SkeletonTree::Node rootTreeNode = createRootTreeNode();
 
-    Tree tree(rootTreeNode);
+    SkeletonTree tree(rootTreeNode);
 
-    Tree::Node *rootNode = tree.getRootNode();
+    SkeletonTree::Node *rootNode = tree.getRootNode();
 
-    Tree::Node newTreeNode = createTreeNode();
+    SkeletonTree::Node newTreeNode = createTreeNode();
 
-    Tree::Node *newChildNode = tree.addNode(newTreeNode, rootNode);
+    SkeletonTree::Node *newChildNode = tree.addNode(newTreeNode, rootNode);
 
     {
-      std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+      std::vector<SkeletonTree::Node *> rootNodeChildren =
+          rootNode->getChildNodes();
       assert(rootNodeChildren.size() == 1);
     }
 
     tree.addNode(newTreeNode, rootNode);
 
     {
-      std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+      std::vector<SkeletonTree::Node *> rootNodeChildren =
+          rootNode->getChildNodes();
       assert(rootNodeChildren.size() == 2);
     }
 
     tree.addNode(newTreeNode, newChildNode);
 
     {
-      std::vector<Tree::Node *> childNodeChildren =
+      std::vector<SkeletonTree::Node *> childNodeChildren =
           newChildNode->getChildNodes();
       assert(childNodeChildren.size() == 1);
     }
 
-    Tree::Node *grandchildNode = tree.addNode(newTreeNode, newChildNode);
+    SkeletonTree::Node *grandchildNode =
+        tree.addNode(newTreeNode, newChildNode);
 
     {
-      std::vector<Tree::Node *> rootNodeChildren = rootNode->getChildNodes();
+      std::vector<SkeletonTree::Node *> rootNodeChildren =
+          rootNode->getChildNodes();
       assert(rootNodeChildren.size() == 2);
     }
 
     tree.addNode(newTreeNode, grandchildNode);
 
     {
-      std::vector<Tree::Node *> grandchildNodeChildren =
+      std::vector<SkeletonTree::Node *> grandchildNodeChildren =
           grandchildNode->getChildNodes();
       assert(grandchildNodeChildren.size() == 1);
     }
@@ -229,25 +242,25 @@ private:
     tree.addNode(newTreeNode, grandchildNode);
 
     {
-      std::vector<Tree::Node *> grandchildNodeChildren =
+      std::vector<SkeletonTree::Node *> grandchildNodeChildren =
           grandchildNode->getChildNodes();
       assert(grandchildNodeChildren.size() == 2);
     }
   }
 
   static void shouldEnumerateTree() {
-    std::set<Tree::Node *> treeNodes;
-    Tree tree = createTree(treeNodes);
+    std::set<SkeletonTree::Node *> treeNodes;
+    SkeletonTree tree = createTree(treeNodes);
 
     // todo: rm; debugging
     // std::cout << "node count: " << treeNodes.size() << std::endl;
     // std::cout << "----- nodes -----" << std::endl;
-    // for (Tree::Node *nextNode : treeNodes) {
+    // for (SkeletonTree::Node *nextNode : treeNodes) {
     //   std::cout << nextNode << std::endl;
     // }
     // std::cout << "----------" << std::endl;
 
-    tree.enumerateDepthFirst([&treeNodes](Tree::Node *nextNode) {
+    tree.enumerateDepthFirst([&treeNodes](SkeletonTree::Node *nextNode) {
       // todo: rm; debugging
       // std::cout << "next node: " << nextNode << std::endl;
 

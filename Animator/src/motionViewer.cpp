@@ -9,9 +9,10 @@
 #include <sstream>
 #include <vector>
 
+#include "Camera.hpp"
 #include "Model.hpp"
 #include "ModelFactory.hpp"
-#include "Camera.hpp"
+#include "SkeletonFactory.hpp"
 
 // todo: rm
 #include "TreeTestBootstrapper.hpp"
@@ -22,7 +23,8 @@ float degreesToRadians(float degrees) { return degrees * (PI / 180); }
 float radiansToDegrees(float radians) { return radians * (180 / PI); }
 
 Camera camera;
-Model model;
+Model model; // todo: rm
+Skeleton skeleton;
 
 // Display list identifier
 static unsigned int aModel;
@@ -44,6 +46,11 @@ int main(int argc, char **argv) {
 
   // todo: read motion capture figure
   TreeTestBootstrapper::runTests();
+
+  SkeletonFactory skeletonFactory(argv[1]);
+  skeleton = skeletonFactory.getSkeleton();
+
+  skeleton.writeToFile("out.bvh");
 
   return 0;
 
