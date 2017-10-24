@@ -203,11 +203,6 @@ private:
         nextFrame.push_back(tmp);
       }
 
-      if (!nextFrame.size()) {
-        int i = 0;
-        i += 1;
-      }
-
       motionFrameCollection.addFrame(nextFrame);
     }
 

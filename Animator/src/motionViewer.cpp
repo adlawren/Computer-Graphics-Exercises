@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+// todo: confirm whether or not all of these are needed
 #include <algorithm>
 #include <exception>
 #include <fstream>
@@ -10,12 +11,9 @@
 #include <vector>
 
 #include "Camera.hpp"
-#include "Model.hpp"
-#include "ModelFactory.hpp"
+#include "Model.hpp"        // todo: rm
+#include "ModelFactory.hpp" // todo: rm
 #include "SkeletonFactory.hpp"
-
-// todo: rm
-#include "TreeTestBootstrapper.hpp"
 
 // todo: move this somewhere else?
 static const float PI = 3.14159265;
@@ -27,7 +25,7 @@ Model model; // todo: rm
 Skeleton skeleton;
 
 // Display list identifier
-static unsigned int aModel;
+static unsigned int aSkeleton;
 
 void drawScene(void);
 void resize(int, int);
@@ -39,20 +37,15 @@ void positionCamera(void);
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    throw std::runtime_error(
-        "Incorrect arguments; one argument (path to model specifications) is "
-        "expected");
+    throw std::runtime_error("Incorrect arguments; one argument (path to "
+                             "motion capture specifications) is "
+                             "expected");
   }
-
-  // todo: read motion capture figure
-  TreeTestBootstrapper::runTests();
 
   SkeletonFactory skeletonFactory(argv[1]);
   skeleton = skeletonFactory.getSkeleton();
 
-  skeleton.writeToFile("out.bvh");
-
-  return 0;
+  // return 0; // todo: rm
 
   ModelFactory modelFactory(argv[1]);
   model = modelFactory.getModel();
@@ -65,7 +58,7 @@ int main(int argc, char **argv) {
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
 
-  glutCreateWindow(model.getName().c_str());
+  glutCreateWindow(argv[1]);
 
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
@@ -85,14 +78,14 @@ int main(int argc, char **argv) {
 void setup(void) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
 
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
+  // glEnableClientState(GL_VERTEX_ARRAY);
+  // glEnableClientState(GL_COLOR_ARRAY);
 
   std::vector<float> &vertices = model.getVertices();
   std::vector<float> &colors = model.getColors();
 
-  glVertexPointer(3, GL_FLOAT, 0, (float *)&vertices[0]);
-  glColorPointer(3, GL_FLOAT, 0, (float *)&colors[0]);
+  // glVertexPointer(3, GL_FLOAT, 0, (float *)&vertices[0]);
+  // glColorPointer(3, GL_FLOAT, 0, (float *)&colors[0]);
 
   glEnable(GL_DEPTH_TEST);
 
@@ -112,9 +105,9 @@ void setup(void) {
 
   model.scale(scale);
 
-  aModel = glGenLists(1);
+  aSkeleton = glGenLists(1);
 
-  glNewList(aModel, GL_COMPILE);
+  glNewList(aSkeleton, GL_COMPILE);
 
   std::vector<std::vector<unsigned>> &polygons = model.getPolygons();
   for (std::vector<unsigned> &polygon : polygons) {
@@ -125,49 +118,59 @@ void setup(void) {
   glEndList();
 }
 
+// recursive method to render sucessive nodes depth-first (?)
+void renderSkeleton(SkeletonTree::Node *node) {
+  glPushMatrix();
+
+  SkeletonTree::Node::Offset nodeOffset = node->getOffset();
+
+  // todo: apply rotation matrix
+  // ...
+
+  // render line
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f);
+  glVertex3f(nodeOffset[0], nodeOffset[1], nodeOffset[2]);
+  glEnd();
+
+  // apply translation matrix
+  glTranslatef(nodeOffset[0], nodeOffset[1], nodeOffset[2]);
+
+  // render children
+  for (SkeletonTree::Node *nextChildNode : node->getChildNodes()) {
+    renderSkeleton(nextChildNode);
+  }
+
+  glPopMatrix();
+}
+
 void drawScene(void) {
   positionCamera();
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
-
-  glEnable(GL_FOG);
-  glFogfv(GL_FOG_COLOR, fogColor);
-  glFogi(GL_FOG_MODE, GL_LINEAR);
-  glFogf(GL_FOG_START, 10.0);
-  glFogf(GL_FOG_END, 11.0);
-  glFogf(GL_FOG_DENSITY, 0.01);
-  glHint(GL_FOG_HINT, GL_NICEST);
+  // float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
+  //
+  // glEnable(GL_FOG);
+  // glFogfv(GL_FOG_COLOR, fogColor);
+  // glFogi(GL_FOG_MODE, GL_LINEAR);
+  // glFogf(GL_FOG_START, 10.0);
+  // glFogf(GL_FOG_END, 11.0);
+  // glFogf(GL_FOG_DENSITY, 0.01);
+  // glHint(GL_FOG_HINT, GL_NICEST);
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+  glColor3f(1.0, 1.0, 1.0);
+
   glPushMatrix();
 
-  // Translate model to position
-  std::vector<float> displacement = model.getDisplacement();
-  glTranslatef(displacement[0], displacement[1], displacement[2]);
+  // translate skeleton into field of view
+  glTranslatef(0.0f, 0.0f, -10.0f);
 
-  //// Extract angle and axis of rotation from quaternion, rotate model
-  Eigen::Quaternion<float> modelOrientation = model.getOrientation();
-
-  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
-  angle = 2 * acos(modelOrientation.w());
-  axisX = modelOrientation.x() / sin(angle / 2);
-  axisY = modelOrientation.y() / sin(angle / 2);
-  axisZ = modelOrientation.z() / sin(angle / 2);
-
-  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
-
-  // Scale model
-  std::vector<float> modelScale = model.getScale();
-  glScalef(modelScale[0], modelScale[1], modelScale[2]);
-
-  // Translate model to origin
-  auto modelCenter = model.getCenter();
-  glTranslatef(-modelCenter[0], -modelCenter[1], -modelCenter[2]);
-
-  glCallList(aModel);
+  // todo: see if you can use the depth first search method of the SkeletonTree
+  // class instead...
+  renderSkeleton(skeleton.getSkeletonTree().getRootNode());
 
   glPopMatrix();
 
@@ -183,18 +186,8 @@ void positionCamera(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  Camera::CAMERA_PROJECTION_MODE cameraProjectionMode =
-      camera.getCameraProjectionMode();
-  switch (cameraProjectionMode) {
-  case Camera::CAMERA_PROJECTION_MODE::ORTHOGRAPHIC:
-    glOrtho(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
-    break;
-  case Camera::CAMERA_PROJECTION_MODE::PERSPECTIVE:
-    glFrustum(-1.0, 1.0, -1.0, 1.0, 8.0, 100.0);
-    break;
-  default:
-    throw std::runtime_error("Unrecognized camera projection mode");
-  }
+  // use perspective mode exclusively
+  glFrustum(-20.0, 20.0, -20.0, 20.0, 8.0, 100.0);
 
   std::vector<float> cameraDisplacement = camera.getDisplacement();
   glTranslatef(cameraDisplacement[0], cameraDisplacement[1],
@@ -223,13 +216,6 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
   case 'x': {
-    Eigen::Quaternion<float> modelOrientation = model.getOrientation();
-    model.rotate(modelOrientation.inverse());
-
-    std::vector<float> modelPosition = model.getDisplacement();
-    model.translate(std::vector<float>{-modelPosition[0], -modelPosition[1],
-                                       -modelPosition[2] - 10.0f});
-
     Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
     camera.rotate(cameraOrientation.inverse());
 
@@ -241,99 +227,8 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'w':
-    model.writeToFile("out.obj");
+    skeleton.writeToFile("output.bvh");
     break;
-  case 'v': {
-    camera.setCameraProjectionMode(
-        Camera::CAMERA_PROJECTION_MODE::ORTHOGRAPHIC);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'V': {
-    camera.setCameraProjectionMode(Camera::CAMERA_PROJECTION_MODE::PERSPECTIVE);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'n': {
-    model.translate(std::vector<float>{0.0, 0.0, -0.1});
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'N': {
-    model.translate(std::vector<float>{0.0, 0.0, 0.1});
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'p': {
-    float rotationAngle = degreesToRadians(-10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2),
-                                           sin(rotationAngle / 2), 0.0f, 0.0f);
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'P': {
-    float rotationAngle = degreesToRadians(10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2),
-                                           sin(rotationAngle / 2), 0.0f, 0.0f);
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'y': {
-    float rotationAngle = degreesToRadians(-10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
-                                           sin(rotationAngle / 2), 0.0f);
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'Y': {
-    float rotationAngle = degreesToRadians(10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
-                                           sin(rotationAngle / 2), 0.0f);
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'r': {
-    float rotationAngle = degreesToRadians(-10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
-                                           sin(rotationAngle / 2));
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
-  case 'R': {
-    float rotationAngle = degreesToRadians(10);
-
-    Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
-                                           sin(rotationAngle / 2));
-
-    model.rotate(rotationDelta);
-
-    glutPostRedisplay(); // re-draw scene
-    break;
-  }
   case 'd': {
     camera.translate(std::vector<float>{-0.1f, 0.0f, 0.0f});
 
@@ -436,14 +331,7 @@ void keyInput(unsigned char key, int x, int y) {
 }
 
 void specialKeyInput(int key, int x, int y) {
-  if (key == GLUT_KEY_UP)
-    model.translate(std::vector<float>{0.0, 0.1, 0.0});
-  if (key == GLUT_KEY_DOWN)
-    model.translate(std::vector<float>{0.0, -0.1, 0.0});
-  if (key == GLUT_KEY_LEFT)
-    model.translate(std::vector<float>{-0.1, 0.0, 0.0});
-  if (key == GLUT_KEY_RIGHT)
-    model.translate(std::vector<float>{0.1, 0.0, 0.0});
+  // todo?
 
   glutPostRedisplay(); // re-draw scene
 }

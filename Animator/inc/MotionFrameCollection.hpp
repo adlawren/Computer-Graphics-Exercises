@@ -28,7 +28,6 @@ public:
       throw std::runtime_error(
           "error adding motion frame: frame buffer exceeded");
 
-    // todo insert by index, and validate length against max
     frames_[currentFrameCount_] = newFrame;
 
     ++currentFrameCount_;

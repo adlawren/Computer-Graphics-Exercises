@@ -12,20 +12,18 @@ public:
       : skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection) {}
 
-  const SkeletonTree &getSkeletonTree() const { return skeletonTree_; }
+  SkeletonTree &getSkeletonTree() { return skeletonTree_; }
 
-  const MotionFrameCollection &getMotionFrameCollection() const {
+  MotionFrameCollection &getMotionFrameCollection() {
     return motionFrameCollection_;
   }
 
-  // todo
   // CC
   Skeleton(const Skeleton &otherSkeleton) {
     motionFrameCollection_ = otherSkeleton.motionFrameCollection_;
     skeletonTree_ = otherSkeleton.skeletonTree_;
   }
 
-  // todo
   // AO
   Skeleton &operator=(const Skeleton &otherSkeleton) {
     motionFrameCollection_ = otherSkeleton.motionFrameCollection_;
