@@ -11,8 +11,6 @@
 #include <vector>
 
 #include "Camera.hpp"
-#include "Model.hpp"        // todo: rm
-#include "ModelFactory.hpp" // todo: rm
 #include "SkeletonFactory.hpp"
 
 // todo: move this somewhere else?
@@ -21,11 +19,10 @@ float degreesToRadians(float degrees) { return degrees * (PI / 180); }
 float radiansToDegrees(float radians) { return radians * (180 / PI); }
 
 Camera camera;
-Model model; // todo: rm
 Skeleton skeleton;
 
-// Display list identifier
-static unsigned int aSkeleton;
+// bool to toggle animation
+bool isAnimate = false;
 
 void drawScene(void);
 void resize(int, int);
@@ -44,11 +41,6 @@ int main(int argc, char **argv) {
 
   SkeletonFactory skeletonFactory(argv[1]);
   skeleton = skeletonFactory.getSkeleton();
-
-  // return 0; // todo: rm
-
-  ModelFactory modelFactory(argv[1]);
-  model = modelFactory.getModel();
 
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
@@ -78,67 +70,62 @@ int main(int argc, char **argv) {
 void setup(void) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
 
-  // glEnableClientState(GL_VERTEX_ARRAY);
-  // glEnableClientState(GL_COLOR_ARRAY);
-
-  std::vector<float> &vertices = model.getVertices();
-  std::vector<float> &colors = model.getColors();
-
-  // glVertexPointer(3, GL_FLOAT, 0, (float *)&vertices[0]);
-  // glColorPointer(3, GL_FLOAT, 0, (float *)&colors[0]);
-
   glEnable(GL_DEPTH_TEST);
-
-  // Move the model into the viewing frustum
-  model.translate(std::vector<float>{0, 0, -10});
-
-  //// Scale the model to fit within screen
-  std::vector<float> modelDimensions = model.getDimensions();
-  float maxDimension = std::max(
-      std::max(modelDimensions[0], modelDimensions[1]), modelDimensions[2]);
-
-  std::vector<float> scale =
-      std::vector<float>{1 / maxDimension, 1 / maxDimension, 1 / maxDimension};
-  scale[0] *= 1.25;
-  scale[1] *= 1.25;
-  scale[2] *= 1.25;
-
-  model.scale(scale);
-
-  aSkeleton = glGenLists(1);
-
-  glNewList(aSkeleton, GL_COMPILE);
-
-  std::vector<std::vector<unsigned>> &polygons = model.getPolygons();
-  for (std::vector<unsigned> &polygon : polygons) {
-    glDrawElements(GL_TRIANGLE_STRIP, 3, GL_UNSIGNED_INT,
-                   (unsigned *)&polygon[0]);
-  }
-
-  glEndList();
 }
 
-// recursive method to render sucessive nodes depth-first (?)
-void renderSkeleton(SkeletonTree::Node *node) {
+// recursive method to render sucessive nodes depth-first
+void renderSkeleton(SkeletonTree::Node *node, bool isRoot = true) {
   glPushMatrix();
 
+  //// render line
   SkeletonTree::Node::Offset nodeOffset = node->getOffset();
 
-  // todo: apply rotation matrix
-  // ...
-
-  // render line
   glBegin(GL_LINES);
   glVertex3f(0.0f, 0.0f, 0.0f);
   glVertex3f(nodeOffset[0], nodeOffset[1], nodeOffset[2]);
   glEnd();
 
-  // apply translation matrix
+  if (isRoot) {
+    // apply root translation
+    SkeletonTree::Node::Channel translationChannel =
+        node->getTranslationChannel();
+
+    glTranslatef(translationChannel[0], translationChannel[1],
+                 translationChannel[2]);
+  }
+
+  // apply joint offset
   glTranslatef(nodeOffset[0], nodeOffset[1], nodeOffset[2]);
 
-  // render children
+  //// apply joint rotation
+  SkeletonTree::Node::Channel rotationChannel = node->getAngleChannel();
+
+  Eigen::Quaternion<float> jointRotation = Eigen::Quaternion<float>::Identity();
+
+  Eigen::Quaternion<float> zAxisRotation(
+      cos(degreesToRadians(rotationChannel[0]) / 2), 0.0f, 0.0f,
+      sin(degreesToRadians(rotationChannel[0]) / 2));
+  Eigen::Quaternion<float> yAxisRotation(
+      cos(degreesToRadians(rotationChannel[1]) / 2), 0.0f,
+      sin(degreesToRadians(rotationChannel[1]) / 2), 0.0f);
+  Eigen::Quaternion<float> xAxisRotation(
+      cos(degreesToRadians(rotationChannel[2]) / 2),
+      sin(degreesToRadians(rotationChannel[2]) / 2), 0.0f, 0.0f);
+
+  jointRotation = zAxisRotation * yAxisRotation * xAxisRotation * jointRotation;
+  jointRotation.normalize();
+
+  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
+  angle = 2 * acos(jointRotation.w());
+  axisX = jointRotation.x() / sin(angle / 2);
+  axisY = jointRotation.y() / sin(angle / 2);
+  axisZ = jointRotation.z() / sin(angle / 2);
+
+  // note: angle needs to be in degrees
+  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
+
   for (SkeletonTree::Node *nextChildNode : node->getChildNodes()) {
-    renderSkeleton(nextChildNode);
+    renderSkeleton(nextChildNode, false);
   }
 
   glPopMatrix();
@@ -149,16 +136,6 @@ void drawScene(void) {
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
-  //
-  // glEnable(GL_FOG);
-  // glFogfv(GL_FOG_COLOR, fogColor);
-  // glFogi(GL_FOG_MODE, GL_LINEAR);
-  // glFogf(GL_FOG_START, 10.0);
-  // glFogf(GL_FOG_END, 11.0);
-  // glFogf(GL_FOG_DENSITY, 0.01);
-  // glHint(GL_FOG_HINT, GL_NICEST);
-
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   glColor3f(1.0, 1.0, 1.0);
@@ -166,7 +143,11 @@ void drawScene(void) {
   glPushMatrix();
 
   // translate skeleton into field of view
-  glTranslatef(0.0f, 0.0f, -10.0f);
+  // glTranslatef(0.0f, 0.0f, -30.0f);
+  // glTranslatef(0.0f, 0.0f, -10.0f);
+  // glTranslatef(0.0f, 0.0f, -1.0f);
+  // glTranslatef(-10.0f, 10.0f, -10.0f); // ***
+  glTranslatef(0.0f, 0.0f, -30.0f);
 
   // todo: see if you can use the depth first search method of the SkeletonTree
   // class instead...
@@ -187,7 +168,10 @@ void positionCamera(void) {
   glLoadIdentity();
 
   // use perspective mode exclusively
-  glFrustum(-20.0, 20.0, -20.0, 20.0, 8.0, 100.0);
+  // glFrustum(-5.0, 5.0, -5.0, 5.0, 1.0, 100.0);
+  // glFrustum(-20.0, 20.0, -20.0, 20.0, 0.5, 100.0);
+  // glFrustum(-30.0, 30.0, 30.0, 30.0, 8.0, 100.0);
+  glOrtho(-100.0, 100.0, -100.0, 100.0, 0.5, 100.0);
 
   std::vector<float> cameraDisplacement = camera.getDisplacement();
   glTranslatef(cameraDisplacement[0], cameraDisplacement[1],
@@ -209,8 +193,31 @@ void positionCamera(void) {
   glLoadIdentity();
 }
 
+void animate(int val) {
+  if (isAnimate) {
+    // get next animation frame
+    MotionFrameCollection::Frame nextAnimationFrame =
+        skeleton.getMotionFrameCollection().getNextFrame();
+    skeleton.getSkeletonTree().updateChannels(nextAnimationFrame);
+
+    glutPostRedisplay();
+    glutTimerFunc(8, animate, 1);
+  }
+}
+
 void keyInput(unsigned char key, int x, int y) {
   switch (key) {
+  // todo: update
+  case 'v': {
+    if (isAnimate) {
+      isAnimate = false;
+    } else {
+      isAnimate = true;
+      animate(1);
+    }
+
+    break;
+  }
   case 'q':
     exit(0);
     break;
