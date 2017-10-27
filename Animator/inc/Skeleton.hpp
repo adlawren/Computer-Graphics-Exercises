@@ -1,15 +1,17 @@
 #pragma once
 
+#include <vector>
+
 #include "MotionFrameCollection.hpp"
 #include "SkeletonTree.hpp"
 
 class Skeleton {
 public:
-  Skeleton() {}
+  Skeleton() : nextFrameIndex_(0) {}
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
-      : skeletonTree_(skeletonTree),
+      : nextFrameIndex_(0), skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection) {}
 
   SkeletonTree &getSkeletonTree() { return skeletonTree_; }
@@ -44,7 +46,29 @@ public:
     outputFileStream.close();
   }
 
+  void applyNextFrame() {
+    std::vector<MotionFrameCollection::Frame> frames =
+        motionFrameCollection_.getFrames();
+
+    MotionFrameCollection::Frame nextFrame =
+        frames[nextFrameIndex_++ % frames.size()];
+
+    skeletonTree_.updateChannels(nextFrame);
+
+    // avoid integer overflow
+    if (nextFrameIndex_ == frames.size()) {
+      nextFrameIndex_ = 0;
+    }
+  }
+
+  void reset() {
+    nextFrameIndex_ = 0;
+    skeletonTree_.updateChannels(
+        motionFrameCollection_.getFrames()[nextFrameIndex_]);
+  }
+
 private:
+  unsigned nextFrameIndex_;
   SkeletonTree skeletonTree_;
   MotionFrameCollection motionFrameCollection_;
 };

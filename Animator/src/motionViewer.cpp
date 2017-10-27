@@ -149,8 +149,7 @@ void drawScene(void) {
   // glTranslatef(-10.0f, 10.0f, -10.0f); // ***
   glTranslatef(0.0f, 0.0f, -30.0f);
 
-  // todo: see if you can use the depth first search method of the SkeletonTree
-  // class instead...
+  // render skeleton joints
   renderSkeleton(skeleton.getSkeletonTree().getRootNode());
 
   glPopMatrix();
@@ -196,9 +195,7 @@ void positionCamera(void) {
 void animate(int val) {
   if (isAnimate) {
     // get next animation frame
-    MotionFrameCollection::Frame nextAnimationFrame =
-        skeleton.getMotionFrameCollection().getNextFrame();
-    skeleton.getSkeletonTree().updateChannels(nextAnimationFrame);
+    skeleton.applyNextFrame();
 
     glutPostRedisplay();
     glutTimerFunc(8, animate, 1);
@@ -207,28 +204,15 @@ void animate(int val) {
 
 void keyInput(unsigned char key, int x, int y) {
   switch (key) {
-  // todo: update
-  case 'v': {
-    if (isAnimate) {
-      isAnimate = false;
-    } else {
-      isAnimate = true;
-      animate(1);
-    }
-
-    break;
-  }
   case 'q':
     exit(0);
     break;
   // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
   case 'x': {
-    Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
-    camera.rotate(cameraOrientation.inverse());
+    isAnimate = false;
 
-    std::vector<float> cameraPosition = camera.getDisplacement();
-    camera.translate(std::vector<float>{-cameraPosition[0], -cameraPosition[1],
-                                        -cameraPosition[2]});
+    skeleton.reset();
+    camera.reset();
 
     glutPostRedisplay(); // re-draw scene
     break;
@@ -236,6 +220,16 @@ void keyInput(unsigned char key, int x, int y) {
   case 'w':
     skeleton.writeToFile("output.bvh");
     break;
+  case 'p': {
+    isAnimate = true;
+    animate(1);
+
+    break;
+  }
+  case 'P': {
+    isAnimate = false;
+    break;
+  }
   case 'd': {
     camera.translate(std::vector<float>{-0.1f, 0.0f, 0.0f});
 

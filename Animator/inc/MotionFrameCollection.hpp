@@ -8,11 +8,10 @@ class MotionFrameCollection {
 public:
   typedef std::vector<float> Frame;
 
-  MotionFrameCollection() : currentFrameCount_(0), nextFrameIndex_(0) {}
+  MotionFrameCollection() : currentFrameCount_(0) {}
 
   MotionFrameCollection(unsigned frameCount, float frameTime)
-      : currentFrameCount_(0), frameCount_(frameCount), nextFrameIndex_(0),
-        frameTime_(frameTime) {
+      : currentFrameCount_(0), frameCount_(frameCount), frameTime_(frameTime) {
     frames_ = std::vector<std::vector<float>>(frameCount_);
   }
 
@@ -36,8 +35,6 @@ public:
 
   std::vector<Frame> getFrames() const { return frames_; }
 
-  Frame getNextFrame() { return frames_[nextFrameIndex_++ % frameCount_]; }
-
   void writeToFileStream(std::ofstream &outputFileStream) const {
     if (outputFileStream.is_open()) {
       outputFileStream << "Frames: " << frameCount_ << std::endl;
@@ -57,7 +54,7 @@ public:
   }
 
 private:
-  unsigned currentFrameCount_, frameCount_, nextFrameIndex_;
+  unsigned currentFrameCount_, frameCount_;
   float frameTime_;
   std::vector<Frame> frames_;
 };
