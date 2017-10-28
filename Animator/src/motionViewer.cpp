@@ -21,8 +21,12 @@ float radiansToDegrees(float radians) { return radians * (180 / PI); }
 Camera camera;
 Skeleton skeleton;
 
-// bool to toggle animation
+//// animaion parameters
 bool isAnimate = false;
+
+// note: in milliseconds
+const int defaultAnimationSpeed = 8;
+int animationSpeed = defaultAnimationSpeed;
 
 void drawScene(void);
 void resize(int, int);
@@ -69,8 +73,6 @@ int main(int argc, char **argv) {
 
 void setup(void) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
-
-  // camera.translate(std::vector<float>{0.0f, 0.0f, 50.0f});
 
   glEnable(GL_DEPTH_TEST);
 }
@@ -144,13 +146,6 @@ void drawScene(void) {
 
   glPushMatrix();
 
-  // translate skeleton into field of view
-  // glTranslatef(0.0f, 0.0f, -30.0f);
-  // glTranslatef(0.0f, 0.0f, -10.0f);
-  // glTranslatef(0.0f, 0.0f, -1.0f);
-  // glTranslatef(-10.0f, 10.0f, -10.0f); // ***
-  // glTranslatef(0.0f, 0.0f, -50.0f);
-
   // render skeleton joints
   renderSkeleton(skeleton.getSkeletonTree().getRootNode());
 
@@ -168,12 +163,37 @@ void positionCamera(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  // todo: use perspective mode exclusively
-  // glOrtho(-100.0, 100.0, -100.0, 100.0, 0.5, 100.0);
-  glFrustum(-10.0, 10.0, -10.0, 10.0, 8.0, 100.0);
+  //// focus camera on animation
+  std::array<float, 6> animationDimensionBounds =
+      skeleton.getAnimationDimensionBounds();
 
-  glTranslatef(0.0f, 0.0f, -50.0f);
+  // scale dimensions
+  std::vector<float> dimensionScale = {0.4f, 1.0f, 1.0f};
+  animationDimensionBounds[0] *= dimensionScale[0];
+  animationDimensionBounds[1] *= dimensionScale[0];
+  animationDimensionBounds[2] *= dimensionScale[1];
+  animationDimensionBounds[3] *= dimensionScale[1];
+  animationDimensionBounds[4] *= dimensionScale[2];
+  animationDimensionBounds[5] *= dimensionScale[2];
 
+  float frustumWidth =
+      animationDimensionBounds[1] - animationDimensionBounds[0];
+  float frustumHeight =
+      animationDimensionBounds[3] - animationDimensionBounds[2];
+  float frustumDepth =
+      animationDimensionBounds[5] - animationDimensionBounds[4];
+
+  glFrustum(-frustumWidth / 2, frustumWidth / 2, -frustumHeight / 2,
+            frustumHeight / 2, 10.0, 100.0);
+
+  float cameraZOffset =
+      -(animationDimensionBounds[4] + frustumDepth / 2) - 50.0f;
+
+  glTranslatef(-(animationDimensionBounds[0] + frustumWidth / 2),
+               -(animationDimensionBounds[2] + frustumHeight / 2),
+               cameraZOffset);
+
+  //// apply user-specified transformations
   std::vector<float> cameraDisplacement = camera.getDisplacement();
   glTranslatef(cameraDisplacement[0], cameraDisplacement[1],
                cameraDisplacement[2]);
@@ -200,7 +220,7 @@ void animate(int val) {
     skeleton.applyNextFrame();
 
     glutPostRedisplay();
-    glutTimerFunc(8, animate, 1);
+    glutTimerFunc(animationSpeed, animate, 1);
   }
 }
 

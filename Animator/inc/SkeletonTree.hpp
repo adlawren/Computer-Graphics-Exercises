@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cfloat>
 #include <exception>
 #include <fstream>
 #include <functional>
@@ -155,12 +156,11 @@ public:
     throw std::runtime_error("Parent node not found");
   }
 
-  void enumerateDepthFirst(
-      std::function<void(SkeletonTree::Node *nextNode)> callback) const {
+  void enumerateDepthFirst(std::function<void(Node *nextNode)> callback) const {
     std::vector<Node *> nextNodes;
     nextNodes.push_back((Node *)&rootNode_);
     while (nextNodes.size()) {
-      SkeletonTree::Node *nextNode = nextNodes.back();
+      Node *nextNode = nextNodes.back();
       nextNodes.pop_back();
 
       callback(nextNode);
@@ -226,6 +226,26 @@ public:
     }
   }
 
+  // returns the dimension boundary values which contain the skeleton tree in
+  // the neutral position, in the format: [min_x, max_x, min_y, max_y, min_z,
+  // max_z]
+  std::array<float, 6> getSkeletonTreeDimensionBounds() {
+    std::array<float, 6> skeletonTreeDimensionBounds;
+    skeletonTreeDimensionBounds[0] = FLT_MAX; // initial min_x
+    skeletonTreeDimensionBounds[1] = 0.0f;    // initial max_x
+    skeletonTreeDimensionBounds[2] = FLT_MAX; // initial min_y
+    skeletonTreeDimensionBounds[3] = 0.0f;    // initial max_y
+    skeletonTreeDimensionBounds[4] = FLT_MAX; // initial min_z
+    skeletonTreeDimensionBounds[5] = 0.0f;    // initial max_z
+
+    std::vector<float> accumulatedOffset(3, 0);
+
+    calculateSkeletonTreeDimesionBounds(
+        (Node *)&rootNode_, skeletonTreeDimensionBounds, accumulatedOffset);
+
+    return skeletonTreeDimensionBounds;
+  }
+
 private:
   Node rootNode_;
 
@@ -273,5 +293,43 @@ private:
     }
 
     outputFileStream << tabOffsetStream.str() << "}" << std::endl;
+  }
+
+  // recursive method to compute the maximum dimension bounds of the skeleton
+  // tree, in the neutral position
+  void calculateSkeletonTreeDimesionBounds(
+      Node *node, std::array<float, 6> &dimensionBounds,
+      std::vector<float> accumulatedOffset) const {
+    Node::Offset nodeOffset = node->getOffset();
+
+    std::vector<float> newAccumulatedOffset = accumulatedOffset;
+    newAccumulatedOffset[0] += nodeOffset[0];
+    newAccumulatedOffset[1] += nodeOffset[1];
+    newAccumulatedOffset[2] += nodeOffset[2];
+
+    // compare accumulated offset with dimensions
+    dimensionBounds[0] = newAccumulatedOffset[0] < dimensionBounds[0]
+                             ? newAccumulatedOffset[0]
+                             : dimensionBounds[0];
+    dimensionBounds[1] = newAccumulatedOffset[0] > dimensionBounds[1]
+                             ? newAccumulatedOffset[0]
+                             : dimensionBounds[1];
+    dimensionBounds[2] = newAccumulatedOffset[1] < dimensionBounds[2]
+                             ? newAccumulatedOffset[1]
+                             : dimensionBounds[2];
+    dimensionBounds[3] = newAccumulatedOffset[1] > dimensionBounds[3]
+                             ? newAccumulatedOffset[1]
+                             : dimensionBounds[3];
+    dimensionBounds[4] = newAccumulatedOffset[2] < dimensionBounds[4]
+                             ? newAccumulatedOffset[2]
+                             : dimensionBounds[4];
+    dimensionBounds[5] = newAccumulatedOffset[2] > dimensionBounds[5]
+                             ? newAccumulatedOffset[2]
+                             : dimensionBounds[5];
+
+    for (Node *nextChildNode : node->getChildNodes()) {
+      calculateSkeletonTreeDimesionBounds(nextChildNode, dimensionBounds,
+                                          newAccumulatedOffset);
+    }
   }
 };
