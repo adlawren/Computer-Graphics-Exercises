@@ -70,6 +70,8 @@ int main(int argc, char **argv) {
 void setup(void) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
 
+  // camera.translate(std::vector<float>{0.0f, 0.0f, 50.0f});
+
   glEnable(GL_DEPTH_TEST);
 }
 
@@ -147,7 +149,7 @@ void drawScene(void) {
   // glTranslatef(0.0f, 0.0f, -10.0f);
   // glTranslatef(0.0f, 0.0f, -1.0f);
   // glTranslatef(-10.0f, 10.0f, -10.0f); // ***
-  glTranslatef(0.0f, 0.0f, -30.0f);
+  // glTranslatef(0.0f, 0.0f, -50.0f);
 
   // render skeleton joints
   renderSkeleton(skeleton.getSkeletonTree().getRootNode());
@@ -166,11 +168,11 @@ void positionCamera(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  // use perspective mode exclusively
-  // glFrustum(-5.0, 5.0, -5.0, 5.0, 1.0, 100.0);
-  // glFrustum(-20.0, 20.0, -20.0, 20.0, 0.5, 100.0);
-  // glFrustum(-30.0, 30.0, 30.0, 30.0, 8.0, 100.0);
-  glOrtho(-100.0, 100.0, -100.0, 100.0, 0.5, 100.0);
+  // todo: use perspective mode exclusively
+  // glOrtho(-100.0, 100.0, -100.0, 100.0, 0.5, 100.0);
+  glFrustum(-10.0, 10.0, -10.0, 10.0, 8.0, 100.0);
+
+  glTranslatef(0.0f, 0.0f, -50.0f);
 
   std::vector<float> cameraDisplacement = camera.getDisplacement();
   glTranslatef(cameraDisplacement[0], cameraDisplacement[1],

@@ -63,8 +63,12 @@ public:
 
   void reset() {
     nextFrameIndex_ = 0;
-    skeletonTree_.updateChannels(
-        motionFrameCollection_.getFrames()[nextFrameIndex_]);
+
+    // zero channels
+    MotionFrameCollection::Frame zeroFrame = std::vector<float>(
+        motionFrameCollection_.getFrames()[nextFrameIndex_].size(), 0);
+
+    skeletonTree_.updateChannels(zeroFrame);
   }
 
 private:

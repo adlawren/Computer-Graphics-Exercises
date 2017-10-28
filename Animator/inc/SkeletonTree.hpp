@@ -4,7 +4,6 @@
 #include <exception>
 #include <fstream>
 #include <functional>
-#include <iostream> // todo: rm
 #include <sstream>
 #include <vector>
 
@@ -18,20 +17,18 @@ public:
     typedef std::array<float, 3> Offset;
 
     Node()
-        : nodeLabel_(""), nodeName_(""), childNodes_(std::vector<Node *>(0)) {}
-
-    Node(const Channel &initialTranslationChannel,
-         const Channel &initialAngleChannel, const Offset &initialOffset)
         : nodeLabel_(""), nodeName_(""), childNodes_(std::vector<Node *>(0)) {
-      translationChannel_ = initialTranslationChannel;
-      angleChannel_ = initialAngleChannel;
-      offset_ = initialOffset;
-    }
+      translationChannel_[0] = 0.0f;
+      translationChannel_[1] = 0.0f;
+      translationChannel_[2] = 0.0f;
 
-    Node(const Channel &initialAngleChannel, const Offset &initialOffset)
-        : nodeLabel_(""), nodeName_(""), childNodes_(std::vector<Node *>(0)) {
-      angleChannel_ = initialAngleChannel;
-      offset_ = initialOffset;
+      angleChannel_[0] = 0.0f;
+      angleChannel_[1] = 0.0f;
+      angleChannel_[2] = 0.0f;
+
+      offset_[0] = 0.0f;
+      offset_[1] = 0.0f;
+      offset_[2] = 0.0f;
     }
 
     // CC
@@ -168,11 +165,6 @@ public:
 
       callback(nextNode);
 
-      // todo: reverse iteration order to enumerate the first children first
-      // ... instead of last?
-      // for (Node *nextChildNode : nextNode->getChildNodes()) {
-      //   nextNodes.push_back(nextChildNode);
-      // }
       std::vector<Node *> childNodes = nextNode->getChildNodes();
       for (auto reverseIterator = childNodes.rbegin();
            reverseIterator != childNodes.rend(); ++reverseIterator) {
@@ -232,47 +224,6 @@ public:
     } else {
       throw std::runtime_error("Failed to open skeleton output file");
     }
-  }
-
-  // todo: rm; used for testing
-  void printOffsetData() const {
-    bool isRoot = true;
-    enumerateDepthFirst([&isRoot](Node *nextNode) {
-      std::cout << std::endl
-                << "Node name: " << nextNode->getName() << std::endl;
-
-      for (float offsetValue : nextNode->getOffset())
-        std::cout << offsetValue << " ";
-      std::cout << std::endl;
-    });
-
-    std::cout << std::endl;
-  }
-
-  // todo: rm; used for testing
-  void printFrameData() const {
-    unsigned nextChannelIndex = 0;
-    bool isRoot = true;
-    enumerateDepthFirst([&nextChannelIndex, &isRoot](Node *nextNode) {
-      std::cout << std::endl
-                << "Node name: " << nextNode->getName() << std::endl;
-
-      if (isRoot) {
-        auto translationChannel = nextNode->getTranslationChannel();
-        std::cout << translationChannel[0] << " " << translationChannel[1]
-                  << " " << translationChannel[2] << " ";
-
-        isRoot = false;
-      }
-
-      auto rotationChannel = nextNode->getAngleChannel();
-      std::cout << rotationChannel[0] << " " << rotationChannel[1] << " "
-                << rotationChannel[2] << " ";
-
-      ++nextChannelIndex;
-    });
-
-    std::cout << std::endl;
   }
 
 private:
