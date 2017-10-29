@@ -168,7 +168,7 @@ void positionCamera(void) {
       skeleton.getAnimationDimensionBounds();
 
   // scale dimensions
-  std::vector<float> dimensionScale = {0.4f, 1.0f, 1.0f};
+  std::vector<float> dimensionScale = {1.0f, 1.0f, 1.0f};
   animationDimensionBounds[0] *= dimensionScale[0];
   animationDimensionBounds[1] *= dimensionScale[0];
   animationDimensionBounds[2] *= dimensionScale[1];
@@ -184,10 +184,10 @@ void positionCamera(void) {
       animationDimensionBounds[5] - animationDimensionBounds[4];
 
   glFrustum(-frustumWidth / 2, frustumWidth / 2, -frustumHeight / 2,
-            frustumHeight / 2, 10.0, 100.0);
+            frustumHeight / 2, 40.0f, 200.0f);
 
   float cameraZOffset =
-      -(animationDimensionBounds[4] + frustumDepth / 2) - 50.0f;
+      -(animationDimensionBounds[4] + frustumDepth / 2) - 100.0f;
 
   glTranslatef(-(animationDimensionBounds[0] + frustumWidth / 2),
                -(animationDimensionBounds[2] + frustumHeight / 2),
