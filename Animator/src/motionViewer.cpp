@@ -163,6 +163,23 @@ void positionCamera(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
+  //// apply user-specified transformations
+  //// extract angle and axis of rotation from quaternion, rotate camera
+  Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
+
+  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
+  angle = 2 * acos(cameraOrientation.w());
+  axisX = cameraOrientation.x() / sin(angle / 2);
+  axisY = cameraOrientation.y() / sin(angle / 2);
+  axisZ = cameraOrientation.z() / sin(angle / 2);
+
+  // note: angle needs to be in degrees
+  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
+
+  std::vector<float> cameraDisplacement = camera.getDisplacement();
+  glTranslatef(-cameraDisplacement[0], -cameraDisplacement[1],
+               -cameraDisplacement[2]);
+
   //// focus camera on animation
   std::array<float, 6> animationDimensionBounds =
       skeleton.getAnimationDimensionBounds();
@@ -192,23 +209,6 @@ void positionCamera(void) {
   glTranslatef(-(animationDimensionBounds[0] + frustumWidth / 2),
                -(animationDimensionBounds[2] + frustumHeight / 2),
                cameraZOffset);
-
-  //// apply user-specified transformations
-  std::vector<float> cameraDisplacement = camera.getDisplacement();
-  glTranslatef(cameraDisplacement[0], cameraDisplacement[1],
-               cameraDisplacement[2]);
-
-  //// Extract angle and axis of rotation from quaternion, rotate camera
-  Eigen::Quaternion<float> cameraOrientation = camera.getOrientation();
-
-  float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
-  angle = 2 * acos(cameraOrientation.w());
-  axisX = cameraOrientation.x() / sin(angle / 2);
-  axisY = cameraOrientation.y() / sin(angle / 2);
-  axisZ = cameraOrientation.z() / sin(angle / 2);
-
-  // note: angle needs to be in degrees
-  glRotatef(radiansToDegrees(angle), axisX, axisY, axisZ);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -243,8 +243,10 @@ void keyInput(unsigned char key, int x, int y) {
     skeleton.writeToFile("output.bvh");
     break;
   case 'p': {
-    isAnimate = true;
-    animate(1);
+    if (!isAnimate) {
+      isAnimate = true;
+      animate(1);
+    }
 
     break;
   }
@@ -253,43 +255,43 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'd': {
-    camera.translate(std::vector<float>{-0.1f, 0.0f, 0.0f});
+    camera.translate(std::vector<float>{-1.0f, 0.0f, 0.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 'D': {
-    camera.translate(std::vector<float>{0.1f, 0.0f, 0.0f});
+    camera.translate(std::vector<float>{1.0f, 0.0f, 0.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 'c': {
-    camera.translate(std::vector<float>{0.0f, -0.1f, 0.0f});
+    camera.translate(std::vector<float>{0.0f, -1.0f, 0.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 'C': {
-    camera.translate(std::vector<float>{0.0f, 0.1f, 0.0f});
+    camera.translate(std::vector<float>{0.0f, 1.0f, 0.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 'z': {
-    camera.translate(std::vector<float>{0.0f, 0.0f, -0.1f});
+    camera.translate(std::vector<float>{0.0f, 0.0f, -1.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 'Z': {
-    camera.translate(std::vector<float>{0.0f, 0.0f, 0.1f});
+    camera.translate(std::vector<float>{0.0f, 0.0f, 1.0f});
 
     glutPostRedisplay(); // re-draw scene
     break;
   }
   case 't': {
-    float rotationAngle = degreesToRadians(-1);
+    float rotationAngle = degreesToRadians(-10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2),
                                            sin(rotationAngle / 2), 0.0f, 0.0f);
@@ -299,7 +301,7 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'T': {
-    float rotationAngle = degreesToRadians(1);
+    float rotationAngle = degreesToRadians(10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2),
                                            sin(rotationAngle / 2), 0.0f, 0.0f);
@@ -309,7 +311,7 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'a': {
-    float rotationAngle = degreesToRadians(-1);
+    float rotationAngle = degreesToRadians(-10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
                                            sin(rotationAngle / 2), 0.0f);
@@ -319,7 +321,7 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'A': {
-    float rotationAngle = degreesToRadians(1);
+    float rotationAngle = degreesToRadians(10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f,
                                            sin(rotationAngle / 2), 0.0f);
@@ -328,8 +330,10 @@ void keyInput(unsigned char key, int x, int y) {
     glutPostRedisplay(); // re-draw scene
     break;
   }
+  // note: the z-rotation directions have been reversed to coincide with
+  // expected rotation directions. Not sure why this is needed...
   case 'l': {
-    float rotationAngle = degreesToRadians(-10);
+    float rotationAngle = degreesToRadians(10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
                                            sin(rotationAngle / 2));
@@ -339,7 +343,7 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case 'L': {
-    float rotationAngle = degreesToRadians(10);
+    float rotationAngle = degreesToRadians(-10);
 
     Eigen::Quaternion<float> rotationDelta(cos(rotationAngle / 2), 0.0f, 0.0f,
                                            sin(rotationAngle / 2));
