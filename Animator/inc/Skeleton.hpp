@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cfloat>
+#include <chrono>
+#include <cmath>
 #include <vector>
 
 #include "MotionFrameCollection.hpp"
@@ -8,12 +10,15 @@
 
 class Skeleton {
 public:
-  Skeleton() : nextFrameIndex_(0) {}
+  Skeleton()
+      : nextFrameIndex_(0), isAnimate_(false), defaultFramesPerSecond_(60),
+        framesPerSecond_(60) {}
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
       : nextFrameIndex_(0), skeletonTree_(skeletonTree),
-        motionFrameCollection_(motionFrameCollection) {}
+        motionFrameCollection_(motionFrameCollection),
+        defaultFramesPerSecond_(60), framesPerSecond_(60) {}
 
   SkeletonTree &getSkeletonTree() { return skeletonTree_; }
 
@@ -47,23 +52,71 @@ public:
     outputFileStream.close();
   }
 
+  void updateFPS(int fpsDelta) { framesPerSecond_ += fpsDelta; }
+
   void applyNextFrame() {
-    std::vector<MotionFrameCollection::Frame> frames =
-        motionFrameCollection_.getFrames();
+    // if displaying initial frame, reset the animation start time
+    if (!isAnimate_) {
+      animationStartTime_ = std::chrono::system_clock::now();
+      timeLastFrameRendered_ = animationStartTime_;
 
-    MotionFrameCollection::Frame nextFrame =
-        frames[nextFrameIndex_++ % frames.size()];
+      skeletonTree_.updateChannels(motionFrameCollection_.getFrames()[0]);
 
-    skeletonTree_.updateChannels(nextFrame);
+      isAnimate_ = true;
+    } else {
+      // if the current time is not past the standard (30 fps) frame period,
+      // prematurely return
+      std::chrono::system_clock::time_point currentTime =
+          std::chrono::system_clock::now();
 
-    // avoid integer overflow
-    if (nextFrameIndex_ == frames.size()) {
-      nextFrameIndex_ = 0;
+      std::chrono::duration<double> defaultFramePeriod(1 /
+                                                       defaultFramesPerSecond_);
+      std::chrono::duration<double> currentFramePeriod =
+          currentTime - timeLastFrameRendered_;
+      if (currentFramePeriod < defaultFramePeriod) {
+        return;
+      }
+
+      //// determine frames to interpolate between
+      std::chrono::duration<double> framePeriod(1 / framesPerSecond_);
+
+      double tmp =
+          std::chrono::duration<double>(currentTime - animationStartTime_)
+              .count() /
+          framePeriod.count();
+
+      int firstFrameIndex = int(floor(tmp));
+      int secondFrameIndex = firstFrameIndex + 1;
+      double interpolationParameter = tmp - floor(tmp);
+
+      std::vector<MotionFrameCollection::Frame> frames =
+          motionFrameCollection_.getFrames();
+
+      // reset animation if frame collection bounds exceeded
+      if (firstFrameIndex >= frames.size() - 1) {
+        // reset animation
+        animationStartTime_ = currentTime;
+        skeletonTree_.updateChannels(motionFrameCollection_.getFrames()[0]);
+      } else {
+        // for each pair of node rotations from both frames, convert the
+        // rotations to quaternions, interpolate, and assign the interpolated
+        // quaternions to the appropriate nodes
+        skeletonTree_.updateChannels(frames[firstFrameIndex],
+                                     frames[secondFrameIndex],
+                                     interpolationParameter);
+      }
+
+      timeLastFrameRendered_ = currentTime;
     }
   }
 
+  // todo: update
   void reset() {
     nextFrameIndex_ = 0;
+
+    animationStartTime_ = std::chrono::system_clock::now();
+    timeLastFrameRendered_ = animationStartTime_;
+    isAnimate_ = false;
 
     // zero channels
     MotionFrameCollection::Frame zeroFrame = std::vector<float>(
@@ -124,7 +177,13 @@ public:
   }
 
 private:
-  unsigned nextFrameIndex_;
+  unsigned nextFrameIndex_; // todo: rm?
   SkeletonTree skeletonTree_;
   MotionFrameCollection motionFrameCollection_;
+
+  // animation parameters
+  bool isAnimate_;
+  std::chrono::system_clock::time_point animationStartTime_,
+      timeLastFrameRendered_;
+  double defaultFramesPerSecond_, framesPerSecond_;
 };

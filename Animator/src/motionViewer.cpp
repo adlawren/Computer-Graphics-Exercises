@@ -13,10 +13,7 @@
 #include "Camera.hpp"
 #include "SkeletonFactory.hpp"
 
-// todo: move this somewhere else?
-static const float PI = 3.14159265;
-float degreesToRadians(float degrees) { return degrees * (PI / 180); }
-float radiansToDegrees(float radians) { return radians * (180 / PI); }
+#include "geometry.hpp"
 
 Camera camera;
 Skeleton skeleton;
@@ -102,22 +99,7 @@ void renderSkeleton(SkeletonTree::Node *node, bool isRoot = true) {
   glTranslatef(nodeOffset[0], nodeOffset[1], nodeOffset[2]);
 
   //// apply joint rotation
-  SkeletonTree::Node::Channel rotationChannel = node->getAngleChannel();
-
-  Eigen::Quaternion<float> jointRotation = Eigen::Quaternion<float>::Identity();
-
-  Eigen::Quaternion<float> zAxisRotation(
-      cos(degreesToRadians(rotationChannel[0]) / 2), 0.0f, 0.0f,
-      sin(degreesToRadians(rotationChannel[0]) / 2));
-  Eigen::Quaternion<float> yAxisRotation(
-      cos(degreesToRadians(rotationChannel[1]) / 2), 0.0f,
-      sin(degreesToRadians(rotationChannel[1]) / 2), 0.0f);
-  Eigen::Quaternion<float> xAxisRotation(
-      cos(degreesToRadians(rotationChannel[2]) / 2),
-      sin(degreesToRadians(rotationChannel[2]) / 2), 0.0f, 0.0f);
-
-  jointRotation = zAxisRotation * yAxisRotation * xAxisRotation * jointRotation;
-  jointRotation.normalize();
+  Eigen::Quaternion<float> jointRotation = node->getRotationQuaternion();
 
   float angle = 0.0f, axisX = 0.0f, axisY = 0.0f, axisZ = 0.0f;
   angle = 2 * acos(jointRotation.w());
@@ -214,14 +196,15 @@ void positionCamera(void) {
   glLoadIdentity();
 }
 
-void animate(int val) {
-  if (isAnimate) {
-    // get next animation frame
-    skeleton.applyNextFrame();
+void animate() { // int val) {
+                 // if (isAnimate) {
+  // get next animation frame
+  skeleton.applyNextFrame();
 
-    glutPostRedisplay();
-    glutTimerFunc(animationSpeed, animate, 1);
-  }
+  glutPostRedisplay();
+  // glutTimerFunc(animationSpeed, animate, 1);
+  // glutTimerFunc(1, animate, 1);
+  // }
 }
 
 void keyInput(unsigned char key, int x, int y) {
@@ -245,13 +228,15 @@ void keyInput(unsigned char key, int x, int y) {
   case 'p': {
     if (!isAnimate) {
       isAnimate = true;
-      animate(1);
+      // animate(1);
+      glutIdleFunc(animate);
     }
 
     break;
   }
   case 'P': {
     isAnimate = false;
+    glutIdleFunc(NULL);
     break;
   }
   case 'd': {
@@ -350,6 +335,26 @@ void keyInput(unsigned char key, int x, int y) {
     camera.rotate(rotationDelta);
 
     glutPostRedisplay(); // re-draw scene
+    break;
+  }
+  case '+': {
+    std::cout << "+ pressed" << std::endl;
+    // skeleton.updateAnimationSpeed(std::chrono::milliseconds(100));
+    // skeleton.updateAnimationSpeed(std::chrono::nanoseconds(100000000));
+
+    // skeleton.increaseAnimationSpeed();
+    skeleton.updateFPS(10);
+
+    break;
+  }
+  case '-': {
+    std::cout << "- pressed" << std::endl;
+    // skeleton.updateAnimationSpeed(std::chrono::milliseconds(-100));
+    // skeleton.updateAnimationSpeed(std::chrono::nanoseconds(-100000000));
+
+    // skeleton.decreaseAnimationSpeed();
+    skeleton.updateFPS(-10);
+
     break;
   }
   default:
