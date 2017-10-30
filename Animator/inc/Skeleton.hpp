@@ -93,8 +93,14 @@ public:
       std::vector<MotionFrameCollection::Frame> frames =
           motionFrameCollection_.getFrames();
 
+      // reset the animation to the LAST frame if FPS is negative
+      if (framesPerSecond_ < 0 && lastInterpolatedFrameIndex_ == 0) {
+
+        lastInterpolatedFrameIndex_ =
+            motionFrameCollection_.getFrames().size() - 2;
+      }
       // reset animation if frame collection bounds exceeded
-      if (firstFrameIndex >= frames.size() - 1) {
+      else if (firstFrameIndex >= frames.size() - 1) {
         // reset animation
         animationStartTime_ = currentTime;
         skeletonTree_.updateChannels(motionFrameCollection_.getFrames()[0]);
