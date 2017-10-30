@@ -28,7 +28,6 @@ int animationSpeed = defaultAnimationSpeed;
 void drawScene(void);
 void resize(int, int);
 void keyInput(unsigned char, int, int);
-void specialKeyInput(int key, int x, int y);
 void setup(void);
 
 void positionCamera(void);
@@ -56,8 +55,6 @@ int main(int argc, char **argv) {
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
-
-  glutSpecialFunc(specialKeyInput);
 
   // todo: needed?
   glewExperimental = GL_TRUE;
@@ -196,15 +193,10 @@ void positionCamera(void) {
   glLoadIdentity();
 }
 
-void animate() { // int val) {
-                 // if (isAnimate) {
-  // get next animation frame
+void animate() {
   skeleton.applyNextFrame();
 
   glutPostRedisplay();
-  // glutTimerFunc(animationSpeed, animate, 1);
-  // glutTimerFunc(1, animate, 1);
-  // }
 }
 
 void keyInput(unsigned char key, int x, int y) {
@@ -215,6 +207,7 @@ void keyInput(unsigned char key, int x, int y) {
   // TODO: MAKE SURE THAT YOU UPDATE THIS; RESET EVERYTHING
   case 'x': {
     isAnimate = false;
+    glutIdleFunc(NULL);
 
     skeleton.reset();
     camera.reset();
@@ -228,7 +221,6 @@ void keyInput(unsigned char key, int x, int y) {
   case 'p': {
     if (!isAnimate) {
       isAnimate = true;
-      // animate(1);
       glutIdleFunc(animate);
     }
 
@@ -338,32 +330,14 @@ void keyInput(unsigned char key, int x, int y) {
     break;
   }
   case '+': {
-    std::cout << "+ pressed" << std::endl;
-    // skeleton.updateAnimationSpeed(std::chrono::milliseconds(100));
-    // skeleton.updateAnimationSpeed(std::chrono::nanoseconds(100000000));
-
-    // skeleton.increaseAnimationSpeed();
     skeleton.updateFPS(10);
-
     break;
   }
   case '-': {
-    std::cout << "- pressed" << std::endl;
-    // skeleton.updateAnimationSpeed(std::chrono::milliseconds(-100));
-    // skeleton.updateAnimationSpeed(std::chrono::nanoseconds(-100000000));
-
-    // skeleton.decreaseAnimationSpeed();
     skeleton.updateFPS(-10);
-
     break;
   }
   default:
     break;
   }
-}
-
-void specialKeyInput(int key, int x, int y) {
-  // todo?
-
-  glutPostRedisplay(); // re-draw scene
 }

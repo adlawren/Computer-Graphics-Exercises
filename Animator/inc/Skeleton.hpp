@@ -10,13 +10,11 @@
 
 class Skeleton {
 public:
-  Skeleton()
-      : nextFrameIndex_(0), isAnimate_(false), defaultFramesPerSecond_(60),
-        framesPerSecond_(60) {}
+  Skeleton() : defaultFramesPerSecond_(60), framesPerSecond_(60) {}
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
-      : nextFrameIndex_(0), skeletonTree_(skeletonTree),
+      : skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection),
         defaultFramesPerSecond_(60), framesPerSecond_(60) {}
 
@@ -110,17 +108,16 @@ public:
     }
   }
 
-  // todo: update
   void reset() {
-    nextFrameIndex_ = 0;
-
+    // reset animation parameters
+    isAnimate_ = false;
     animationStartTime_ = std::chrono::system_clock::now();
     timeLastFrameRendered_ = animationStartTime_;
-    isAnimate_ = false;
+    framesPerSecond_ = defaultFramesPerSecond_;
 
     // zero channels
-    MotionFrameCollection::Frame zeroFrame = std::vector<float>(
-        motionFrameCollection_.getFrames()[nextFrameIndex_].size(), 0);
+    MotionFrameCollection::Frame zeroFrame =
+        std::vector<float>(motionFrameCollection_.getFrames()[0].size(), 0);
 
     skeletonTree_.updateChannels(zeroFrame);
   }
@@ -177,7 +174,6 @@ public:
   }
 
 private:
-  unsigned nextFrameIndex_; // todo: rm?
   SkeletonTree skeletonTree_;
   MotionFrameCollection motionFrameCollection_;
 
