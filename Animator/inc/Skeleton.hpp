@@ -10,13 +10,16 @@
 
 class Skeleton {
 public:
-  Skeleton() : defaultFramesPerSecond_(60), framesPerSecond_(60) {}
+  Skeleton()
+      : defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_) {
+  }
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
       : skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection),
-        defaultFramesPerSecond_(60), framesPerSecond_(60) {}
+        defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_) {
+  }
 
   SkeletonTree &getSkeletonTree() { return skeletonTree_; }
 

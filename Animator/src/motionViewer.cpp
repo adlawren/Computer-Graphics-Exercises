@@ -1,14 +1,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-// todo: confirm whether or not all of these are needed
-#include <algorithm>
 #include <exception>
-#include <fstream>
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
 
 #include "Camera.hpp"
 #include "SkeletonFactory.hpp"
@@ -20,10 +13,6 @@ Skeleton skeleton;
 
 //// animaion parameters
 bool isAnimate = false;
-
-// note: in milliseconds
-const int defaultAnimationSpeed = 8;
-int animationSpeed = defaultAnimationSpeed;
 
 void drawScene(void);
 void resize(int, int);
