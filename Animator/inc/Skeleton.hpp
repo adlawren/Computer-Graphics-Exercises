@@ -11,14 +11,14 @@
 class Skeleton {
 public:
   Skeleton()
-      : defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_),
+      : defaultFramesPerSecond_(120), framesPerSecond_(defaultFramesPerSecond_),
         lastInterpolatedFrameIndex_(0) {}
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
       : skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection),
-        defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_),
+        defaultFramesPerSecond_(120), framesPerSecond_(defaultFramesPerSecond_),
         lastInterpolatedFrameIndex_(0) {}
 
   SkeletonTree &getSkeletonTree() { return skeletonTree_; }
