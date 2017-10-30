@@ -183,6 +183,10 @@ void positionCamera(void) {
 }
 
 void animate() {
+  if (skeleton.isPaused()) {
+    skeleton.unpauseAnimation();
+  }
+
   skeleton.applyNextFrame();
 
   glutPostRedisplay();
@@ -218,6 +222,7 @@ void keyInput(unsigned char key, int x, int y) {
   case 'P': {
     isAnimate = false;
     glutIdleFunc(NULL);
+    skeleton.pauseAnimation();
     break;
   }
   case 'd': {

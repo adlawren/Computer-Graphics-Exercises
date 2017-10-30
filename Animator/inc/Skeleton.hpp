@@ -11,15 +11,15 @@
 class Skeleton {
 public:
   Skeleton()
-      : defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_) {
-  }
+      : defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_),
+        lastInterpolatedFrameIndex_(0) {}
 
   Skeleton(const SkeletonTree &skeletonTree,
            const MotionFrameCollection &motionFrameCollection)
       : skeletonTree_(skeletonTree),
         motionFrameCollection_(motionFrameCollection),
-        defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_) {
-  }
+        defaultFramesPerSecond_(60), framesPerSecond_(defaultFramesPerSecond_),
+        lastInterpolatedFrameIndex_(0) {}
 
   SkeletonTree &getSkeletonTree() { return skeletonTree_; }
 
@@ -86,7 +86,7 @@ public:
               .count() /
           framePeriod.count();
 
-      int firstFrameIndex = int(floor(tmp));
+      int firstFrameIndex = int(floor(tmp)) + lastInterpolatedFrameIndex_;
       int secondFrameIndex = firstFrameIndex + 1;
       double interpolationParameter = tmp - floor(tmp);
 
@@ -98,6 +98,7 @@ public:
         // reset animation
         animationStartTime_ = currentTime;
         skeletonTree_.updateChannels(motionFrameCollection_.getFrames()[0]);
+        lastInterpolatedFrameIndex_ = 0;
       } else {
         // for each pair of node rotations from both frames, convert the
         // rotations to quaternions, interpolate, and assign the interpolated
@@ -105,9 +106,32 @@ public:
         skeletonTree_.updateChannels(frames[firstFrameIndex],
                                      frames[secondFrameIndex],
                                      interpolationParameter);
+
+        if (firstFrameIndex != lastInterpolatedFrameIndex_) {
+          double delta = (firstFrameIndex - lastInterpolatedFrameIndex_) *
+                         (1 / framesPerSecond_);
+          delta *= 1000000000;
+
+          std::chrono::nanoseconds nanosecondDelta((int)delta);
+          animationStartTime_ += nanosecondDelta;
+
+          lastInterpolatedFrameIndex_ = firstFrameIndex;
+        }
       }
 
       timeLastFrameRendered_ = currentTime;
+    }
+  }
+
+  bool isPaused() const { return isPaused_; }
+
+  void pauseAnimation() { isPaused_ = true; }
+
+  void unpauseAnimation() {
+    if (isPaused_) {
+      animationStartTime_ = std::chrono::system_clock::now();
+
+      isPaused_ = false;
     }
   }
 
@@ -117,6 +141,7 @@ public:
     animationStartTime_ = std::chrono::system_clock::now();
     timeLastFrameRendered_ = animationStartTime_;
     framesPerSecond_ = defaultFramesPerSecond_;
+    lastInterpolatedFrameIndex_ = 0;
 
     // zero channels
     MotionFrameCollection::Frame zeroFrame =
@@ -181,8 +206,10 @@ private:
   MotionFrameCollection motionFrameCollection_;
 
   // animation parameters
-  bool isAnimate_;
+  bool isAnimate_, isPaused_;
   std::chrono::system_clock::time_point animationStartTime_,
       timeLastFrameRendered_;
   double defaultFramesPerSecond_, framesPerSecond_;
+
+  int lastInterpolatedFrameIndex_;
 };
