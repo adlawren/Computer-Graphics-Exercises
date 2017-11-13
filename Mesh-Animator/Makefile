@@ -1,6 +1,7 @@
 # NOTICE: The majority of this code was written by Dale Schuurmans, and was copied and pasted with his permission
 
-FLAGS = -std=c++11 -I/usr/include -I/usr/include/eigen3 -L/usr/lib -L/usr/lib/nvidia-375 -lglut -lGLEW -lGL -lGLU -lX11 -Wno-write-strings
+# todo: rm the '-ggdb' flag
+FLAGS = -std=c++11 -I/usr/include -I/usr/include/eigen3 -L/usr/lib -L/usr/lib/nvidia-375 -lglut -lGLEW -lGL -lGLU -lX11 -Wno-write-strings -ggdb
 
 # utilities
 

@@ -31,6 +31,18 @@ Vector3f initialPosition(0.0, 0.0, -1.0);
 bool fog = true;
 const float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
 
+// todo: move?
+enum DISPLAY_MODE { WIRE_FRAME, SHADED_FLAT, SHADED_SMOOTH, TEXTURED };
+
+DISPLAY_MODE displayMode = DISPLAY_MODE::WIRE_FRAME;
+void toggleDisplayMode() {
+  if (displayMode == DISPLAY_MODE::TEXTURED) {
+    displayMode = DISPLAY_MODE::WIRE_FRAME;
+  } else {
+    displayMode = static_cast<DISPLAY_MODE>(((int)displayMode) + 1);
+  }
+}
+
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
   glutInitContextVersion(3, 0);
@@ -65,6 +77,32 @@ void setup(char *fileName) {
   cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 100.0);
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glEnable(GL_DEPTH_TEST);
+
+  //// Configure lighting
+  glEnable(GL_LIGHTING);
+
+  float lightAmb[] = {0.0, 0.0, 0.0, 1.0};
+  float lightDifAndSpec[] = {1.0, 1.0, 1.0, 1.0};
+  float lightPos[] = {-5.0, 15.0, 3.0, 1.0};
+  float globAmb[] = {0.2, 0.2, 0.2, 1.0};
+
+  glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec);
+  glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+  glEnable(GL_LIGHT0);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb);
+  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+  glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+
+  float matAmbAndDif[] = {0.0, 0.0, 0.0, 1.0};
+  float matSpec[] = {1.0, 1.0, 1.0, 1.0};
+  float matShine[] = {50.0};
+
+  glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbAndDif);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
 }
 
 void drawScene(void) {
@@ -90,8 +128,24 @@ void drawScene(void) {
     glDisable(GL_FOG);
 
   // draw model
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  obj.glColor();
+  switch (displayMode) {
+  case DISPLAY_MODE::WIRE_FRAME:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    break;
+  case DISPLAY_MODE::SHADED_FLAT:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glShadeModel(GL_FLAT);
+    break;
+  case DISPLAY_MODE::SHADED_SMOOTH:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glShadeModel(GL_SMOOTH);
+    break;
+  case DISPLAY_MODE::TEXTURED:
+    // todo
+    break;
+  default:
+    break;
+  }
 
   obj.glCallDisplayList();
 
@@ -142,6 +196,9 @@ void keyInput(unsigned char key, int x, int y) {
     obj.reset();
     cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 100.0);
     fog = false;
+    break;
+  case 's':
+    toggleDisplayMode();
     break;
   default:
     break;

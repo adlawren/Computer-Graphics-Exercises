@@ -67,15 +67,21 @@ void mesh::writeObjFile(char *fileName) {
   for (unsigned int i = 0; i < vertices.size(); ++i)
     outfile << "v " << vertices[i][0] << " " << vertices[i][1] << " "
             << vertices[i][2] << endl;
-  // todo: write vertex normals
-  // todo: write vertex texture coordinates
+  for (unsigned int i = 0; i < vertexTextureCoordinates.size(); ++i)
+    outfile << "vt " << vertexTextureCoordinates[i][0] << " "
+            << vertexTextureCoordinates[i][1] << endl;
+  for (unsigned int i = 0; i < vertexNormals.size(); ++i)
+    outfile << "vt " << vertexNormals[i][0] << " " << vertexNormals[i][1] << " "
+            << vertexNormals[i][2] << endl;
   for (unsigned int i = 0; i < faceVertices.size(); ++i) {
     outfile << "f ";
     for (unsigned int j = 0; j < faceVertices[i].size(); ++j) {
-      // todo: write whole face (including vertex normal and texture coord
-      // indices)
-      outfile << faceVertices[i][j][0] + 1;
-      outfile << " ";
+      outfile << faceVertices[i][j][0] + 1 << "/" << faceVertices[i][j][1] + 1
+              << "/" << faceVertices[i][j][2] + 1;
+
+      // print spaces on all but the last faceVertex value
+      if (j != faceVertices[i].size() - 1)
+        outfile << " ";
     }
     outfile << endl;
   }
