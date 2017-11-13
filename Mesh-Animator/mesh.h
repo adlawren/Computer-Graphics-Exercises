@@ -26,7 +26,10 @@ using namespace Eigen;
 
 struct mesh {
   vector<Vector3f> vertices;
-  vector<vector<unsigned int>> faceVertices;
+  vector<Vector3f> vertexNormals;
+  vector<Vector2f> vertexTextureCoordinates;
+
+  vector<vector<Vector3i>> faceVertices;
 
   // properties
   float meshScale;        // object scale divisor
@@ -135,17 +138,6 @@ struct mesh {
   // display list
   void glCreateDisplayList();
   void glCallDisplayList();
-
-  // vertex array
-  void createVertexArray();
-  void glEnableVertexArray();
-  void glDrawVertexArray();
-  // VBO
-  void glEnableVBO();
-  void glDrawVBO();
-  // VAO
-  void glEnableVAO();
-  void glDrawVAO();
 };
 
 #endif
