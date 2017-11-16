@@ -15,6 +15,9 @@
 #endif
 #include <GL/freeglut.h>
 
+#include "material.h"
+#include "path.h"
+
 #ifndef MESH_H
 #define MESH_H
 
@@ -49,8 +52,10 @@ struct mesh {
   float *diameters;              // array[numTriangles]
   unsigned int vaoId[1];
 
+  material *meshMaterial;
+
   // constructor
-  mesh() {
+  mesh() : meshMaterial(0) {
     translation << 0, 0, 0;
     quaternion = Quaternionf::Identity();
     color[0] = color[1] = color[2] = 1.0;
@@ -62,6 +67,9 @@ struct mesh {
     numTriangles = 0;
     triangleIndices = NULL;
   }
+
+  // dtor
+  ~mesh() { delete meshMaterial; }
 
   // member functions
 
@@ -127,6 +135,13 @@ struct mesh {
     Vector4f newRotation;
     newRotation << axis * -sin(angleQuat), cos(angleQuat);
     quaternion = (Quaternionf)newRotation * quaternion;
+  }
+
+  material *getMaterial() const {
+    if (meshMaterial == 0)
+      throw std::runtime_error("mesh material not initialized");
+
+    return meshMaterial;
   }
 
   // other member functions defined in mesh.cpp

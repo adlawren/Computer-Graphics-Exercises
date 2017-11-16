@@ -22,8 +22,8 @@ attachmentViewer: attachmentViewer.cpp camera.h mesh.* skeleton.* bvh_util.* att
 
 # viewers you need to implement
 
-modelSolidViewer: modelSolidViewer.cpp camera.h light.h mesh.* texture.*
-	g++ modelSolidViewer.cpp mesh.cpp texture.cpp -o modelSolidViewer $(FLAGS)
+modelSolidViewer: modelSolidViewer.cpp camera.h getbmp.h light.h material.h mesh.* path.h texture.*
+	g++ getbmp.cpp modelSolidViewer.cpp mesh.cpp texture.cpp -o modelSolidViewer $(FLAGS)
 
 personViewer: personViewer.cpp light.h camera.h timer.h mesh.* texture.* skeleton.* motion.* bvh_util.* attachment.* animation.*
 	g++ personViewer.cpp mesh.cpp texture.cpp skeleton.cpp motion.cpp bvh_util.cpp attachment.cpp animation.cpp -o personViewer $(FLAGS)
