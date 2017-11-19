@@ -58,17 +58,122 @@ void attachment::readW(char *fileName) {
 
 void attachment::glDrawMeshAttach(bool highlightMode, int highlightBone) {
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  for (unsigned int i = 0; i < objp->faceVertices.size(); ++i) {
+  for (unsigned int f = 0; f < objp->faceVertices.size(); ++f) {
     glBegin(GL_TRIANGLE_FAN);
-    for (unsigned int j = 0; j < objp->faceVertices[i].size(); ++j) {
-      unsigned int v = objp->faceVertices[i][j];
-      float val;
+    for (unsigned int j = 0; j < objp->faceVertices[f].size(); ++j) {
+      unsigned int vertexIndex(objp->faceVertices[f][j][0]);
+      unsigned int vertexTextureCoordinateIndex(objp->faceVertices[f][j][1]);
+      unsigned int vertexNormalIndex(objp->faceVertices[f][j][2]);
+
+      float val = 0.0f;
       if (highlightMode)
-        val = (float)(*V)(v, highlightBone);
+        val = (float)(*V)(vertexIndex, highlightBone);
       else
-        val = (*W)(v, highlightBone);
+        val = (*W)(vertexIndex, highlightBone);
       glColor3f(0.9 * val + 0.1, 0.9 * val + 0.1, 0.9 * val + 0.1);
-      glVertex3fv(objp->vertices[v].data());
+
+      glNormal3fv(objp->vertexNormals[vertexNormalIndex].data());
+      glTexCoord2fv(
+          objp->vertexTextureCoordinates[vertexTextureCoordinateIndex].data());
+      glVertex3fv(objp->vertices[vertexIndex].data());
+    }
+    glEnd();
+  }
+}
+
+void attachment::computeDeformedVertices(joint *current,
+                                         Matrix4f transformationMatrix,
+                                         Vector3f accumulatedOffset,
+                                         Quaternionf accumulatedRotation,
+                                         int &nodeCount) {
+  glPushMatrix();
+
+  if (current->type == rootJoint) {
+    Matrix4f rootTranslationMatrix = Matrix4f::Identity();
+    rootTranslationMatrix(0, 3) = current->transl(0);
+    rootTranslationMatrix(1, 3) = current->transl(1);
+    rootTranslationMatrix(2, 3) = current->transl(2);
+
+    transformationMatrix *= rootTranslationMatrix;
+  } else {
+    //// transform the mesh vertices based on accumulated transformations and
+    //// bone weights
+    for (unsigned int vertexIndex = 0; vertexIndex < objp->vertices.size();
+         ++vertexIndex) {
+      float weight = (*W)(vertexIndex, nodeCount - 1);
+      if (weight > 0.0f) {
+        //// deform vertex location
+        Vector4f vertexLocation = Vector4f::Zero();
+        vertexLocation.segment(0, 3) =
+            objp->vertices[vertexIndex] - accumulatedOffset;
+        vertexLocation[3] = 1.0f;
+        deformedVertexLocations[vertexIndex] +=
+            (transformationMatrix * vertexLocation).segment(0, 3) * weight;
+
+        // deform vertex normal
+        deformedVertexNormals[vertexIndex] +=
+            accumulatedRotation.toRotationMatrix() *
+            objp->vertexNormals[vertexIndex] * weight;
+      }
+    }
+  }
+
+  Matrix4f offsetTranslationMatrix = Matrix4f::Identity();
+  offsetTranslationMatrix(0, 3) = current->offset(0);
+  offsetTranslationMatrix(1, 3) = current->offset(1);
+  offsetTranslationMatrix(2, 3) = current->offset(2);
+
+  transformationMatrix *= offsetTranslationMatrix;
+
+  accumulatedOffset += current->offset;
+
+  Matrix4f intermediateRotationMatrix = Matrix4f::Identity();
+  intermediateRotationMatrix.block(0, 0, 3, 3) =
+      current->quaternion.toRotationMatrix();
+
+  transformationMatrix *= intermediateRotationMatrix;
+  accumulatedRotation *= current->quaternion;
+
+  nodeCount += 1;
+
+  for (unsigned int c = 0; c < current->children.size(); ++c)
+    computeDeformedVertices(current->children[c], transformationMatrix,
+                            accumulatedOffset, accumulatedRotation, nodeCount);
+
+  glPopMatrix();
+}
+
+void attachment::glDrawDeformedMesh() {
+  // initialize deformed vertices
+  deformedVertexLocations = objp->vertices;
+  deformedVertexNormals = objp->vertexNormals;
+
+  // move the vertices to the origin and scale
+  for (int vertexIndex = 0; vertexIndex < deformedVertexLocations.size();
+       ++vertexIndex) {
+    deformedVertexLocations[vertexIndex] -= objp->center;
+    deformedVertexLocations[vertexIndex] *= objp->meshScale;
+  }
+
+  // deform vertices; recurse over skeleton
+  int nodeCount = 0;
+  computeDeformedVertices(skelp->root, Matrix4f::Identity(), Vector3f::Zero(),
+                          Quaternionf::Identity(), nodeCount);
+
+  // draw deformed vertices
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  for (unsigned int f = 0; f < objp->faceVertices.size(); ++f) {
+    glBegin(GL_TRIANGLE_FAN);
+    for (unsigned int j = 0; j < objp->faceVertices[f].size(); ++j) {
+      unsigned int vertexIndex(objp->faceVertices[f][j][0]);
+      unsigned int vertexTextureCoordinateIndex(objp->faceVertices[f][j][1]);
+      unsigned int vertexNormalIndex(objp->faceVertices[f][j][2]);
+
+      glColor3f(1.0, 1.0, 1.0);
+      glNormal3fv(deformedVertexNormals[vertexNormalIndex].data());
+      glTexCoord2fv(
+          objp->vertexTextureCoordinates[vertexTextureCoordinateIndex].data());
+      glVertex3fv(deformedVertexLocations[vertexIndex].data());
     }
     glEnd();
   }

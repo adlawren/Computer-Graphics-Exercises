@@ -45,6 +45,9 @@ struct attachment {
   SparseMatrix<int> *L;
   MatrixXf *W;
 
+  vector<Vector3f> deformedVertexLocations;
+  vector<Vector3f> deformedVertexNormals;
+
   // constructors
   attachment() {}
 
@@ -54,6 +57,9 @@ struct attachment {
 
   void readW(char *);
   void glDrawMeshAttach(bool, int);
+  void glDrawDeformedMesh(void);
+  void computeDeformedVertices(joint *j, Matrix4f, Vector3f, Quaternionf,
+                               int &);
 
   // computing attachments
   void distancesVisibility(float *);

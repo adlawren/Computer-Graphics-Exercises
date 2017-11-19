@@ -276,6 +276,52 @@ void skeleton::glDraw_SubTree(joint *current) {
   glPopMatrix();
 }
 
+// todo: rm?
+void skeleton::glDraw_SubTree2(joint *current, Matrix4f transformationMatrix) {
+  glPushMatrix();
+
+  if (current->type == rootJoint) {
+    Matrix4f rootTranslationMatrix = Matrix4f::Identity();
+    rootTranslationMatrix(0, 3) = current->transl(0);
+    rootTranslationMatrix(1, 3) = current->transl(1);
+    rootTranslationMatrix(2, 3) = current->transl(2);
+
+    transformationMatrix *= rootTranslationMatrix;
+  }
+
+  // todo: make this cleaner?
+  Vector4f vert1 = Vector4f::Zero(), vert2 = Vector4f::Zero();
+  vert1[3] = 1.0f;
+  vert2[3] = 1.0f;
+  vert2.segment(0, 3) = current->offset;
+
+  Vector4f vert1Prime = transformationMatrix * vert1;
+  Vector4f vert2Prime = transformationMatrix * vert2;
+
+  glBegin(GL_LINES);
+  glVertex3f(vert1Prime[0], vert1Prime[1], vert1Prime[2]);
+  glVertex3f(vert2Prime[0], vert2Prime[1], vert2Prime[2]);
+  glEnd();
+
+  Matrix4f offsetTranslationMatrix = Matrix4f::Identity();
+  offsetTranslationMatrix(0, 3) = current->offset(0);
+  offsetTranslationMatrix(1, 3) = current->offset(1);
+  offsetTranslationMatrix(2, 3) = current->offset(2);
+
+  transformationMatrix *= offsetTranslationMatrix;
+
+  Matrix4f intermediateRotationMatrix = Matrix4f::Identity();
+  intermediateRotationMatrix.block(0, 0, 3, 3) =
+      current->quaternion.toRotationMatrix();
+
+  transformationMatrix *= intermediateRotationMatrix;
+
+  for (unsigned int c = 0; c < current->children.size(); ++c)
+    glDraw_SubTree2(current->children[c], transformationMatrix);
+
+  glPopMatrix();
+}
+
 void skeleton::recoverBones() {
   if (!vertices.size())
     recoverBones_SubTree(root, Vector3f::Zero(), -1);

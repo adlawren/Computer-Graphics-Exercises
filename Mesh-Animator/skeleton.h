@@ -99,8 +99,13 @@ struct skeleton {
   Quaternionf quaternionFromEulers(Vector3f, vector<string>);
 
   void glColor() { glColor4fv(color); }
-  void glDraw() { glDraw_SubTree(root); }
+  void glDraw() {
+    // glDraw_SubTree(root);
+    glDraw_SubTree2(root, Matrix4f::Identity());
+  }
+
   void glDraw_SubTree(joint *);
+  void glDraw_SubTree2(joint *, Matrix4f);
 
   // vertices and bones (used for vertex arrays)
   void recoverBones();
