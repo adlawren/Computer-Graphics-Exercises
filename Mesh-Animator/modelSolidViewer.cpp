@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
-  glutCreateWindow("modelViewer");
+  glutCreateWindow("modelSolidViewer");
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   glewInit();
 #endif
   if (argc != 2) {
-    cerr << "Usage: modelViewer <meshfile.obj>" << endl;
+    cerr << "Usage: modelSolidViewer <meshfile.obj>" << endl;
     exit(1);
   }
   setup(argv[1]);

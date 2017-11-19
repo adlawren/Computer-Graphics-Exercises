@@ -35,8 +35,6 @@ skeleton skel;
 timer tim;
 bool interpolate(true);
 attachment att(&obj, &skel);
-int highlightBone(0);
-bool highlightMode = false;
 float boneRadii[] = {0.5,  2.0, 1.0, 0.5, 0.25, 0.0,  0.5, 2.0, 1.0, 0.5,
                      0.25, 0.0, 0.5, 2.0, 1.5,  1.5,  0.5, 0.5, 0.5, 2.0,
                      1.0,  1.0, 0.5, 0.5, 0.5,  0.25, 0.0, 0.0, 2.0, 1.0,
@@ -49,13 +47,13 @@ int main(int argc, char **argv) {
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
   glutInitWindowPosition(100, 100);
-  glutCreateWindow("attachmentViewer");
+  glutCreateWindow("personViewer");
   glutDisplayFunc(drawScene);
   glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
   glutIdleFunc(idle);
   if (argc != 4) {
-    cerr << "Usage: attachmentViewer <meshfile.obj> <motionfile.bvh> "
+    cerr << "Usage: personViewer <meshfile.obj> <motionfile.bvh> "
          << "<weights.att>" << endl;
     exit(1);
   }
@@ -152,22 +150,12 @@ void keyInput(unsigned char key, int x, int y) {
     att.writeMatrixXfSparse(att.W, "W2.out");
     break;
   // TODO: MAKE SURE THAT THIS IS UP TO DATE; RESET EVERYTHING
-  case 'x': // reset
-    obj.reset();
-    cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 100.0);
-    cam.transl[2] = -1.0;
-    highlightBone = 0;
-    highlightMode = false;
-    break;
-  case '+': // toggle through bones
-    highlightBone = (highlightBone + 1) % skel.bones.size();
-    break;
-  case '-': // reverse toggle through bones
-    highlightBone =
-        (!highlightBone) ? skel.bones.size() - 1 : highlightBone - 1;
-    break;
-  case 'h':
-    highlightMode = !highlightMode;
+  case 'x':      // reset
+    obj.reset(); // ???
+
+    tim.initialize(true, mot.sequence.size(), mot.defaultGapTime);
+    cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 200.0);
+    cam.positionMotion(mot.range, skel.radius);
     break;
   default:
     break;
