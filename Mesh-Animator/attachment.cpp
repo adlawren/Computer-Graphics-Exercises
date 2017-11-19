@@ -161,7 +161,6 @@ void attachment::glDrawDeformedMesh() {
                           Quaternionf::Identity(), nodeCount);
 
   // draw deformed vertices
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   for (unsigned int f = 0; f < objp->faceVertices.size(); ++f) {
     glBegin(GL_TRIANGLE_FAN);
     for (unsigned int j = 0; j < objp->faceVertices[f].size(); ++j) {

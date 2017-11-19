@@ -14,6 +14,8 @@
 #include "mesh.h"
 #include "skeleton.h"
 #include "attachment.h"
+#include "light.h"
+#include "texture.h"
 
 using namespace Eigen;
 
@@ -96,6 +98,17 @@ void setup(char *objFileName, char *bvhFileName, char *attFileName) {
   // gl
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glEnable(GL_DEPTH_TEST);
+
+  // Configure lighting
+  light l;
+  l.glConfigureLighting();
+
+  material *meshMaterial = obj.getMaterial();
+  meshMaterial->glConfigureMaterialProperties();
+
+  // Load skin texture
+  texture meshTexture(meshMaterial);
+  meshTexture.glLoadTexture();
 }
 
 void drawScene(void) {
@@ -111,10 +124,11 @@ void drawScene(void) {
   glLoadIdentity();
   cam.glPosition();
 
+  cam.glConfigureDisplayMode();
+
   // interpolate skeleton pose
   glColor3f(1.0f, 0.0f, 0.0f);
   skel.interpolatePose(&mot, tim.loopFrac, interpolate);
-  skel.glDraw(); // todo: rm
 
   // draw deformed mesh
   att.glDrawDeformedMesh();

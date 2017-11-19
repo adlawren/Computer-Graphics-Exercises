@@ -26,6 +26,10 @@ struct camera {
   Vector3f transl;        // translation
   Quaternionf quaternion; // orientation
 
+  //// Display mode parameters
+  enum DISPLAY_MODE { WIRE_FRAME, SHADED_FLAT, SHADED_SMOOTH, TEXTURED };
+  DISPLAY_MODE displayMode;
+
   // member functions
 
   // initializer not constructor, since we also want to reset after creation
@@ -37,6 +41,8 @@ struct camera {
     zView << z0, z1;
     transl = Vector3f::Zero();
     quaternion = Quaternionf::Identity();
+
+    displayMode = DISPLAY_MODE::WIRE_FRAME;
   }
 
   void glVolume() // define view volume in openGL
@@ -102,6 +108,42 @@ struct camera {
     transl(2) -= motionRange[1].maxCoeff() + radius;
   }
 
+  void toggleDisplayMode() {
+    if (displayMode == DISPLAY_MODE::TEXTURED) {
+      displayMode = DISPLAY_MODE::WIRE_FRAME;
+    } else {
+      displayMode = static_cast<DISPLAY_MODE>(((int)displayMode) + 1);
+    }
+  }
+
+  void glConfigureDisplayMode() {
+    switch (displayMode) {
+    case DISPLAY_MODE::WIRE_FRAME:
+      // Disable the skin texture
+      glDisable(GL_TEXTURE_2D);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      break;
+    case DISPLAY_MODE::SHADED_FLAT:
+      glDisable(GL_TEXTURE_2D);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glShadeModel(GL_FLAT);
+      break;
+    case DISPLAY_MODE::SHADED_SMOOTH:
+      glDisable(GL_TEXTURE_2D);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glShadeModel(GL_SMOOTH);
+      break;
+    case DISPLAY_MODE::TEXTURED:
+      glEnable(GL_TEXTURE_2D);
+      break;
+    default:
+      break;
+    }
+  }
+
   void keyInput(unsigned char key) // camera controls
   {
     switch (key) {
@@ -146,6 +188,9 @@ struct camera {
       break;
     case 'L':
       zRotate(-ROTATE_SPEED);
+      break;
+    case 's':
+      toggleDisplayMode();
       break;
     }
   }

@@ -80,4 +80,16 @@ struct material {
   Vector3f getKs() const { return Ks; }
 
   path getMapKdPath() const { return mapKdFilePath; }
+
+  void glConfigureMaterialProperties() {
+    float matAmb[] = {Ka[0], Ka[1], Ka[2], 1.0};
+    float matDiff[] = {Kd[0], Kd[1], Kd[2], 1.0};
+    float matSpec[] = {Ks[0], Ks[1], Ks[2], 1.0};
+    float matShine[] = {50.0};
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, matAmb);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiff);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+  }
 };

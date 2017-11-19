@@ -11,8 +11,6 @@
 #include "camera.h"
 #include "getbmp.h"
 #include "mesh.h"
-
-// todo: use
 #include "light.h"
 #include "texture.h"
 
@@ -31,22 +29,6 @@ camera cam;
 Vector3f initialPosition(0.0, 0.0, -1.0);
 bool fog = true;
 const float fogColor[4] = {0.0, 0.0, 0.0, 0.0};
-
-// todo: move?
-//// Display parameters
-enum DISPLAY_MODE { WIRE_FRAME, SHADED_FLAT, SHADED_SMOOTH, TEXTURED };
-
-DISPLAY_MODE displayMode = DISPLAY_MODE::WIRE_FRAME;
-void toggleDisplayMode() {
-  if (displayMode == DISPLAY_MODE::TEXTURED) {
-    displayMode = DISPLAY_MODE::WIRE_FRAME;
-  } else {
-    displayMode = static_cast<DISPLAY_MODE>(((int)displayMode) + 1);
-  }
-}
-
-// skin texture
-static unsigned int textureIds[1];
 
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
@@ -84,58 +66,16 @@ void setup(char *fileName) {
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glEnable(GL_DEPTH_TEST);
 
-  //// Configure lighting
-  glEnable(GL_LIGHTING);
-
-  float lightAmb[] = {0.0, 0.0, 0.0, 1.0};
-  float lightDifAndSpec[] = {1.0, 1.0, 1.0, 1.0};
-  float lightPos[] = {-5.0, 15.0, 3.0, 1.0};
-  float globAmb[] = {0.2, 0.2, 0.2, 1.0};
-
-  glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
-  glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec);
-  glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec);
-  glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-
-  glEnable(GL_LIGHT0);
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb);
-  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-  glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+  // Configure lighting
+  light l;
+  l.glConfigureLighting();
 
   material *meshMaterial = obj.getMaterial();
-  float matAmb[] = {meshMaterial->getKa()[0], meshMaterial->getKa()[1],
-                    meshMaterial->getKa()[2], 1.0};
-  float matDiff[] = {meshMaterial->getKd()[0], meshMaterial->getKd()[1],
-                     meshMaterial->getKd()[2], 1.0};
-  float matSpec[] = {meshMaterial->getKs()[0], meshMaterial->getKs()[1],
-                     meshMaterial->getKs()[2], 1.0};
-  float matShine[] = {50.0};
+  meshMaterial->glConfigureMaterialProperties();
 
-  glMaterialfv(GL_FRONT, GL_AMBIENT, matAmb);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiff);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
-  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
-
-  //// Load skin texture
-  glGenTextures(1, textureIds);
-
-  BitMapFile *skinBitMapFile;
-
-  skinBitMapFile = getbmp(meshMaterial->getMapKdPath().getAsString());
-
-  glBindTexture(GL_TEXTURE_2D, textureIds[0]);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, skinBitMapFile->sizeX,
-               skinBitMapFile->sizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-               skinBitMapFile->data);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  // Load skin texture
+  texture meshTexture(meshMaterial);
+  meshTexture.glLoadTexture();
 }
 
 void drawScene(void) {
@@ -161,28 +101,7 @@ void drawScene(void) {
     glDisable(GL_FOG);
 
   // draw model
-  switch (displayMode) {
-  case DISPLAY_MODE::WIRE_FRAME:
-    // Disable the skin texture
-    glDisable(GL_TEXTURE_2D);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    break;
-  case DISPLAY_MODE::SHADED_FLAT:
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glShadeModel(GL_FLAT);
-    break;
-  case DISPLAY_MODE::SHADED_SMOOTH:
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glShadeModel(GL_SMOOTH);
-    break;
-  case DISPLAY_MODE::TEXTURED:
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureIds[0]);
-    break;
-  default:
-    break;
-  }
+  cam.glConfigureDisplayMode();
 
   obj.glCallDisplayList();
 
@@ -233,9 +152,6 @@ void keyInput(unsigned char key, int x, int y) {
     obj.reset();
     cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 100.0);
     fog = false;
-    break;
-  case 's':
-    toggleDisplayMode();
     break;
   default:
     break;
