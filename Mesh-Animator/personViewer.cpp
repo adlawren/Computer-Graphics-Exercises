@@ -39,6 +39,7 @@ float boneRadii[] = {0.5,  2.0, 1.0, 0.5, 0.25, 0.0,  0.5, 2.0, 1.0, 0.5,
                      0.25, 0.0, 0.5, 2.0, 1.5,  1.5,  0.5, 0.5, 0.5, 2.0,
                      1.0,  1.0, 0.5, 0.5, 0.5,  0.25, 0.0, 0.0, 2.0, 1.0,
                      1.0,  0.5, 0.5, 0.5, 0.25, 0.0,  0.0};
+bool modelWasReset = true;
 
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
@@ -124,9 +125,13 @@ void drawScene(void) {
 
   cam.glConfigureDisplayMode();
 
-  // interpolate skeleton pose
-  glColor3f(1.0f, 0.0f, 0.0f);
-  skel.interpolatePose(&mot, tim.loopFrac, interpolate);
+  //// interpolate skeleton pose
+  // display the null pose when the model is reset
+  if (modelWasReset) {
+    skel.nullPose();
+  } else {
+    skel.interpolatePose(&mot, tim.loopFrac, interpolate);
+  }
 
   // draw deformed mesh
   att.glDrawDeformedMesh();
@@ -156,6 +161,11 @@ void keyInput(unsigned char key, int x, int y) {
     tim.initialize(true, mot.sequence.size(), mot.defaultGapTime);
     cam.initialize(persp, -0.1, 0.1, -0.1, 0.1, 0.1, 200.0);
     cam.positionMotion(mot.range, skel.radius);
+
+    modelWasReset = true;
+    break;
+  case 'p':
+    modelWasReset = false;
     break;
   default:
     break;
