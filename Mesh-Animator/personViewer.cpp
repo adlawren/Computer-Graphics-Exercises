@@ -144,10 +144,10 @@ void keyInput(unsigned char key, int x, int y) {
     exit(0);
     break;  // quit
   case 'w': // write
-    obj.writeObjFile("output2.obj");
-    skel.writeBvhSkeleton("output2.bvh");
-    att.writeMatrixXi(att.V, "V2.out");
-    att.writeMatrixXfSparse(att.W, "W2.out");
+    obj.writeObjFile("meshout.obj");
+    skel.writeBvhSkeleton("skeletonout.bvh");
+    mot.writeBvhMotion("skeletonout.bvh");
+    att.writeMatrixXfSparse(att.W, "attachout.att");
     break;
   // TODO: MAKE SURE THAT THIS IS UP TO DATE; RESET EVERYTHING
   case 'x':      // reset

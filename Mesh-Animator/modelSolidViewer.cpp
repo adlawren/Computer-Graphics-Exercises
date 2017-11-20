@@ -116,7 +116,7 @@ void keyInput(unsigned char key, int x, int y) {
     exit(0);
     break; // quit
   case 'w':
-    obj.writeObjFile("output.obj");
+    obj.writeObjFile("meshout.obj");
     break;
   case 'n':
     obj.zTransl(-0.1);
