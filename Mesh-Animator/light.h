@@ -25,5 +25,8 @@ struct light {
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
   }
 };
