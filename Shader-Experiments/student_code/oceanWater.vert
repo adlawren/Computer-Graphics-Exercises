@@ -1,0 +1,10 @@
+
+// A super simple vertex shader that just mimics exactly what OpenGL's
+// default fixed pipeline does
+
+uniform float currentTime;
+
+void main()
+{
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+}
