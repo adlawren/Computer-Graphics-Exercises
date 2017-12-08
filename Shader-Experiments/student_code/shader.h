@@ -73,6 +73,11 @@ struct shader {
     // install program into rendering state
     glUseProgram(glProgramHandle);
 
+    // assign class variables
+    vertShaderHandle = vertexShaderHandle;
+    fragShaderHandle = fragmentShaderHandle;
+    programHandle = glProgramHandle;
+
     glClearColor(1.0, 1.0, 1.0, 0.0);
   }
 
